@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1f5f43" />
+    <title>Odkrywca krakowskich parków</title>
+    <link rel="stylesheet" href="/vendor/leaflet.css" />
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f5f43'/%3E%3Cpath d='M16 25c0-7 3-11 9-13-1 8-4 11-9 13zm0 0c0-5-2-8-7-9 1 6 3 8 7 9z' fill='%23f2efe4'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 21c0-6 2.5-9.5 8-11-1 7-3.5 9.5-8 11Z" />
+            <path d="M12 21c0-4.5-2-7.5-7-8.5 1 5 3 7 7 8.5Z" />
+            <path d="M12 21v-7" />
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Odkrywca parków</h1>
+          <p>Kraków · <span id="parkCount">—</span> punktów z odznaki</p>
+        </div>
+      </div>
+      <div class="journey" aria-live="polite">
+        <div class="journey-top"><strong id="doneCount">0</strong> z <span id="allCount">—</span> zrobione</div>
+        <div class="bar"><span id="barFill"></span></div>
+      </div>
+      <button class="net-btn" id="btnNet" type="button" title="Otwórz na telefonie / VPN" aria-label="Otwórz na telefonie lub w VPN">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>
+      </button>
+    </header>
+
+    <main class="layout">
+      <aside class="panel">
+        <nav class="tabs" role="tablist">
+          <button class="tab is-active" data-tab="route" role="tab">Trasa</button>
+          <button class="tab" data-tab="parks" role="tab">Parki</button>
+          <button class="tab" data-tab="saved" role="tab">Zapisane <span id="savedBadge" class="badge">0</span></button>
+        </nav>
+
+        <div class="panel-scroll">
+          <!-- ============================ TRASA ============================ -->
+          <section class="tabpane is-active" id="pane-route">
+            <div class="card">
+              <div class="field-head">
+                <span class="label">Start</span>
+                <button class="link" id="btnGeo" type="button">Moja lokalizacja</button>
+              </div>
+              <div class="start-box">
+                <span class="start-pin" aria-hidden="true">A</span>
+                <div class="start-info">
+                  <div class="start-name" id="startName">Rynek Główny</div>
+                  <div class="mono" id="startCoords">50,06170 · 19,93730</div>
+                </div>
+              </div>
+              <button class="ghost wide" id="btnPick" type="button" aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg>
+                Wskaż start na mapie
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="field-head">
+                <span class="label">Parki na dziś</span>
+                <span class="hint" id="availableHint"></span>
+              </div>
+              <div class="stepper">
+                <button type="button" class="step" data-step="-1" aria-label="Mniej parków">−</button>
+                <input id="nInput" type="number" inputmode="numeric" min="1" max="20" value="5" aria-label="Liczba parków" />
+                <button type="button" class="step" data-step="1" aria-label="Więcej parków">+</button>
+              </div>
+              <div class="n-deltas" id="nDeltas" hidden></div>
+              <input id="nRange" class="range" type="range" min="1" max="20" value="5" aria-label="Suwak liczby parków" />
+              <div class="chips" id="nChips">
+                <button type="button" data-n="3">3</button>
+                <button type="button" data-n="5">5</button>
+                <button type="button" data-n="7">7</button>
+                <button type="button" data-n="10">10</button>
+                <button type="button" data-n="15">15</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="field-head"><span class="label">Co liczyć</span></div>
+              <div class="chips kinds" id="kindChips"></div>
+              <label class="switch">
+                <input type="checkbox" id="skipDone" checked />
+                <span class="track"><span class="knob"></span></span>
+                <span>Pomiń już zrobione</span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" id="loopChk" />
+                <span class="track"><span class="knob"></span></span>
+                <span>Wróć do startu</span>
+              </label>
+            </div>
+
+            <div class="result" id="routeResult">
+              <div class="result-loading" id="routeLoading">
+                <span class="spinner" aria-hidden="true"></span>
+                <span id="loadingText">Liczę trasę…</span>
+              </div>
+              <div class="result-body" id="routeBody" hidden>
+                <div class="result-head">
+                  <div>
+                    <div class="big" id="totalKm">—</div>
+                    <div class="result-meta" id="totalMeta"></div>
+                  </div>
+                  <button class="primary" id="btnSaveRoute" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4.2L6 21Z"/></svg>
+                    Zapisz
+                  </button>
+                </div>
+                <ol class="stops" id="stops"></ol>
+                <div class="route-actions">
+                  <button class="ghost" id="btnGpx" type="button" title="Pobierz plik GPX do aplikacji nawigacyjnej">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v3h16v-3"/></svg>
+                    Pobierz GPX
+                  </button>
+                  <button class="ghost" id="btnNav" type="button" title="Otwórz trasę w Google Maps">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m21 3-9.5 18-2-7.5L2 11.5Z"/></svg>
+                    Nawiguj
+                  </button>
+                </div>
+                <p class="fineprint" id="routeNote"></p>
+              </div>
+              <div class="result-empty" id="routeEmpty" hidden></div>
+            </div>
+          </section>
+
+          <!-- ============================ PARKI ============================ -->
+          <section class="tabpane" id="pane-parks">
+            <div class="search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+              <input id="searchInput" type="search" placeholder="Szukaj parku…" autocomplete="off" />
+            </div>
+            <div class="chips filter-chips" id="parkFilter">
+              <button type="button" data-filter="all" class="is-active">Wszystkie</button>
+              <button type="button" data-filter="todo">Do zrobienia</button>
+              <button type="button" data-filter="done">Zrobione</button>
+            </div>
+            <div class="list-meta" id="listMeta"></div>
+            <div class="park-list" id="parkList"></div>
+          </section>
+
+          <!-- =========================== ZAPISANE =========================== -->
+          <section class="tabpane" id="pane-saved">
+            <div class="saved-head">
+              <h2>Zapisane trasy</h2>
+              <p>Twoje wycieczki zostają na dysku — możesz do nich wrócić w każdej chwili.</p>
+            </div>
+            <div class="saved-list" id="savedList"></div>
+          </section>
+        </div>
+      </aside>
+
+      <div class="map-wrap">
+        <div id="map"></div>
+        <div class="map-hint" id="mapHint" hidden>Kliknij na mapie, aby ustawić start <button type="button" id="btnCancelPick">Anuluj</button></div>
+        <div class="legend">
+          <div class="legend-cats" id="catLegend"></div>
+          <div class="legend-misc">
+            <span><i class="dot dot-start"></i> start</span>
+            <span><i class="dot dot-route"></i> trasa</span>
+            <span><i class="dot dot-done"></i> zrobione</span>
+          </div>
+          <a class="legend-credit" href="https://odkrywca-parkow.pl" target="_blank" rel="noopener">punkty: odkrywca-parkow.pl ↗</a>
+        </div>
+      </div>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <dialog id="netDialog" class="net-dialog">
+      <div class="net-head">
+        <h2>Otwórz na telefonie</h2>
+        <button class="net-close" type="button" id="btnNetClose" aria-label="Zamknij">×</button>
+      </div>
+      <p class="net-desc">Te adresy działają na innych urządzeniach w sieci lokalnej lub w Twoim VPN (Tailscale). Telefon musi być w tej samej sieci albo mieć włączony Tailscale.</p>
+      <div class="net-qr" id="netQr"></div>
+      <div class="net-list" id="netList"><div class="net-loading">Sprawdzam adresy…</div></div>
+      <p class="net-note">Serwer działa w tle na tym komputerze. Gdy go zatrzymasz, adresy przestaną odpowiadać.</p>
+    </dialog>
+
+    <script src="/vendor/leaflet.js"></script>
+    <script src="/vendor/qrcode.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>

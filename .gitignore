@@ -1,0 +1,13 @@
+# Prywatne dane i cache — nie trafiają do repozytorium
+data/state.json
+data/state.json.tmp
+data/matrix.json
+data/tiles/
+*.log
+server.err.log
+
+# Systemowe
+.DS_Store
+Thumbs.db
+node_modules/
+.env

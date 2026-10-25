@@ -1,0 +1,1125 @@
+{
+ "fetchedAt": "2026-10-25T10:25:57.472Z",
+ "source": "odkrywca-parkow.pl (park_data.json) · punkty ZZM Kraków",
+ "count": 78,
+ "categories": [
+  {
+   "id": "historical",
+   "label": "Historyczny",
+   "color": "#d2402e",
+   "count": 17
+  },
+  {
+   "id": "waterside",
+   "label": "Wodny",
+   "color": "#2563eb",
+   "count": 21
+  },
+  {
+   "id": "forest",
+   "label": "Leśny",
+   "color": "#2e7d32",
+   "count": 3
+  },
+  {
+   "id": "common",
+   "label": "Zwykły",
+   "color": "#2b2b2b",
+   "count": 37
+  }
+ ],
+ "parks": [
+  {
+   "id": "p1",
+   "number": 1,
+   "name": "Park im. Wisławy Szymborskiej",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1418-park-im-wislawy-szymborskiej.html",
+   "center": [
+    50.06543,
+    19.92896
+   ]
+  },
+  {
+   "id": "p2",
+   "number": 2,
+   "name": "Planty Krakowskie",
+   "category": "historical",
+   "categoryLabel": "Historyczny",
+   "color": "#d2402e",
+   "hint": "Przy Barbakanie, blisko pomnika Matejki",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/256-planty-krakowskie.html",
+   "center": [
+    50.06526,
+    19.94096
+   ]
+  },
+  {
+   "id": "p3",
+   "number": 3,
+   "name": "Park Jalu Kurka",
+   "category": "forest",
+   "categoryLabel": "Leśny",
+   "color": "#2e7d32",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1417-park-jalu-kurka.html",
+   "center": [
+    50.06925,
+    19.94149
+   ]
+  },
+  {
+   "id": "p4",
+   "number": 4,
+   "name": "Bulwary Wisły",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "przed Wawelem w alejce koło ławeczki",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/253-bulwary-wisly.html",
+   "center": [
+    50.05222,
+    19.93387
+   ]
+  },
+  {
+   "id": "p5",
+   "number": 5,
+   "name": "Park Grzegórzecki",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1598-park-grzegorzecki.html",
+   "center": [
+    50.05510644422755,
+    19.965764271164236
+   ]
+  },
+  {
+   "id": "p6",
+   "number": 6,
+   "name": "Park Dąbie",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/254-park-dabie.html",
+   "center": [
+    50.05663,
+    19.97934
+   ]
+  },
+  {
+   "id": "p7",
+   "number": 7,
+   "name": "Park Strzelecki",
+   "category": "historical",
+   "categoryLabel": "Historyczny",
+   "color": "#d2402e",
+   "hint": "Obok pomnika Paderewskiego",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/255-park-strzelecki.html",
+   "center": [
+    50.06639,
+    19.95039
+   ]
+  },
+  {
+   "id": "p8",
+   "number": 8,
+   "name": "Park Kolejowy",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/2004-park-kolejowy.html",
+   "center": [
+    50.05975,
+    19.94751
+   ]
+  },
+  {
+   "id": "p9",
+   "number": 9,
+   "name": "Park Ogród nad Sudołem",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1227-park-kieszonkowy-ogrod-nad-sudolem.html",
+   "center": [
+    50.09063,
+    19.96918
+   ]
+  },
+  {
+   "id": "p10",
+   "number": 10,
+   "name": "Park Rzeczny Białucha",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "budka kawałek dalej za Ogródkiem Pana Stanisława",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1527-park-rzeczny-bialucha.html",
+   "center": [
+    50.08273,
+    19.95736
+   ]
+  },
+  {
+   "id": "p11",
+   "number": 11,
+   "name": "Park Reduta",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/663-park-reduta.html",
+   "center": [
+    50.09652,
+    19.98724
+   ]
+  },
+  {
+   "id": "p12",
+   "number": 12,
+   "name": "Park Zaczarowanej Dorożki (Stawy Dominikańskie)",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/257-park-stawy-dominikanskie.html",
+   "center": [
+    50.0873,
+    19.96639
+   ]
+  },
+  {
+   "id": "p13",
+   "number": 13,
+   "name": "Park im. Stanisława Wyspiańskiego",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "na alejce od Makowskiego w stronę kościoła",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/220-park-im-stanislawa-wyspianskiego-w-krakowie.html",
+   "center": [
+    50.08584,
+    19.92079
+   ]
+  },
+  {
+   "id": "p14",
+   "number": 14,
+   "name": "Park im. Tadeusza Kościuszki",
+   "category": "historical",
+   "categoryLabel": "Historyczny",
+   "color": "#d2402e",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/206-park-im-tadeusza-kosciuszki.html",
+   "center": [
+    50.09344846007101,
+    19.94014363134343
+   ]
+  },
+  {
+   "id": "p15",
+   "number": 15,
+   "name": "Park Krowoderski",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "przy górce",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/207-park-krowoderski.html",
+   "center": [
+    50.08957,
+    19.92191
+   ]
+  },
+  {
+   "id": "p16",
+   "number": 16,
+   "name": "Park Łagiewnicki",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "za placem zabaw w stronę tyrolki",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1466-park-w-lagiewnikach.html",
+   "center": [
+    50.02347597644292,
+    19.944830665569917
+   ]
+  },
+  {
+   "id": "p17",
+   "number": 17,
+   "name": "Park Solvay",
+   "category": "forest",
+   "categoryLabel": "Leśny",
+   "color": "#2e7d32",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/251-park-solvay.html",
+   "center": [
+    50.018216759481305,
+    19.92788450750185
+   ]
+  },
+  {
+   "id": "p18",
+   "number": 18,
+   "name": "Park Rzeczny Wilga",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/883-park-rzeczny-wilga-i-etap.html",
+   "center": [
+    50.028,
+    19.92705
+   ]
+  },
+  {
+   "id": "p19",
+   "number": 19,
+   "name": "Park im. Henryka Jordana",
+   "category": "historical",
+   "categoryLabel": "Historyczny",
+   "color": "#d2402e",
+   "hint": "zwykły",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/209-park-im-henryka-jordana.html",
+   "center": [
+    50.06088,
+    19.91766
+   ]
+  },
+  {
+   "id": "p20",
+   "number": 20,
+   "name": "Park Kleparski",
+   "category": "historical",
+   "categoryLabel": "Historyczny",
+   "color": "#d2402e",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/221-park-kleparski.html",
+   "center": [
+    50.07628,
+    19.93787
+   ]
+  },
+  {
+   "id": "p21",
+   "number": 21,
+   "name": "Park Ogród Łobzów",
+   "category": "historical",
+   "categoryLabel": "Historyczny",
+   "color": "#d2402e",
+   "hint": "wejście za Orlenem",
+   "detailsUrl": "https://krakowwzieleni.pl/project/park-ogrod-lobzow/",
+   "center": [
+    50.07547,
+    19.91024
+   ]
+  },
+  {
+   "id": "p22",
+   "number": 22,
+   "name": "Park przy ul. Łokietka",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "pieczątka już poprawiona - na starcie miała nazwę parku nr 21",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1615-park-przy-ul-lokietka.html",
+   "center": [
+    50.08066,
+    19.9278
+   ]
+  },
+  {
+   "id": "p23",
+   "number": 23,
+   "name": "Park Krakowski im. M. Grechuty",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "przy Światowidzie",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/222-park-krakowski.html",
+   "center": [
+    50.0671,
+    19.92442
+   ]
+  },
+  {
+   "id": "p24",
+   "number": 24,
+   "name": "Park św. Wincentego a'Paulo",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/225-park-sw-wincentego-a-paulo.html",
+   "center": [
+    50.07115,
+    19.91181
+   ]
+  },
+  {
+   "id": "p25",
+   "number": 25,
+   "name": "Park przy Forcie Bronowice",
+   "category": "historical",
+   "categoryLabel": "Historyczny",
+   "color": "#d2402e",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1614-park-przy-forcie-bronowice.html",
+   "center": [
+    50.081593072541814,
+    19.90017157621145
+   ]
+  },
+  {
+   "id": "p26",
+   "number": 26,
+   "name": "Park przy ul. Radzikowskiego",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1528-park-przy-ul-radzikowskiego.html",
+   "center": [
+    50.08687,
+    19.88694
+   ]
+  },
+  {
+   "id": "p27",
+   "number": 27,
+   "name": "Park Rzeczny im. Włodzimierza Tetmajera",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1526-park-rzeczny-im-w-tetmajera.html",
+   "center": [
+    50.094857622600784,
+    19.865901484818473
+   ]
+  },
+  {
+   "id": "p28",
+   "number": 28,
+   "name": "Park Młynówka Królewska",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "Skrzynka jest przy mostku w tej Młynówce Królewskiej w okolicy ul. Balickiej i ul. Zygmunta Starego",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/224-park-mlynowka-krolewska.html",
+   "center": [
+    50.07917,
+    19.85738
+   ]
+  },
+  {
+   "id": "p29",
+   "number": 29,
+   "name": "Błonia Krakowskie",
+   "category": "historical",
+   "categoryLabel": "Historyczny",
+   "color": "#d2402e",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/205-blonia-krakowskie.html",
+   "center": [
+    50.059344,
+    19.922824
+   ]
+  },
+  {
+   "id": "p30",
+   "number": 30,
+   "name": "Park Decjusza",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/208-park-decjusza.html",
+   "center": [
+    50.06597,
+    19.87179
+   ]
+  },
+  {
+   "id": "p31",
+   "number": 31,
+   "name": "Park Rzeczny Rudawa",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "nieduży park, skrzynka dobrze widocza",
+   "detailsUrl": "https://krakowwzieleni.pl/project/park-rzeczny-rudawa/",
+   "center": [
+    50.07136,
+    19.86808
+   ]
+  },
+  {
+   "id": "p32",
+   "number": 32,
+   "name": "Park linearny Ruczaj",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/858-park-linearny.html",
+   "center": [
+    50.0283,
+    19.90993
+   ]
+  },
+  {
+   "id": "p33",
+   "number": 33,
+   "name": "Park Dębnicki",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/244-park-debnicki-w-krakowie.html",
+   "center": [
+    50.0491825,
+    19.9169017
+   ]
+  },
+  {
+   "id": "p34",
+   "number": 34,
+   "name": "Park Pychowicki",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1597-park-pychowicki.html",
+   "center": [
+    50.03041,
+    19.8939
+   ]
+  },
+  {
+   "id": "p35",
+   "number": 35,
+   "name": "Park Zakrzówek",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/446-zakrzowek.html",
+   "center": [
+    50.03369257091627,
+    19.907942889501758
+   ]
+  },
+  {
+   "id": "p36",
+   "number": 36,
+   "name": "Park Maćka i Doroty",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/248-park-im-macka-i-doroty.html",
+   "center": [
+    50.00242,
+    19.91215
+   ]
+  },
+  {
+   "id": "p37",
+   "number": 37,
+   "name": "Park przy Forcie Borek",
+   "category": "historical",
+   "categoryLabel": "Historyczny",
+   "color": "#d2402e",
+   "hint": "Znajduje się na lewo patrząc z przodu od wejścia głównego",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1416-park-wokol-artyleryjskiego-fortu-52-borek.html",
+   "center": [
+    50.00079142029988,
+    19.90256793234326
+   ]
+  },
+  {
+   "id": "p38",
+   "number": 38,
+   "name": "Park Duchacki",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "brak tuszu, niepewny typ",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/865-park-duchacki.html",
+   "center": [
+    50.02165,
+    19.96521
+   ]
+  },
+  {
+   "id": "p39",
+   "number": 39,
+   "name": "Park Kurdwanów",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/246-park-kurdwanow.html",
+   "center": [
+    50.009826,
+    19.960212
+   ]
+  },
+  {
+   "id": "p40",
+   "number": 40,
+   "name": "Park Rzeczny Drwinka",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "niektóre wejścia są niedostępne - polecane wejście od ulicy Szpakowej",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1525-park-rzeczny-drwinka.html",
+   "center": [
+    50.014623294268965,
+    19.979676941150217
+   ]
+  },
+  {
+   "id": "p41",
+   "number": 41,
+   "name": "Park Złocień",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "budka jest na końcu placu zabaw",
+   "detailsUrl": "https://zzm.krakow.pl/aktualnosci/1348-park-zlocien-przy-ul-mariana-domagaly.html",
+   "center": [
+    50.02404,
+    20.04897
+   ]
+  },
+  {
+   "id": "p42",
+   "number": 42,
+   "name": "Park im. Anny i Erazma Jerzmanowskich",
+   "category": "historical",
+   "categoryLabel": "Historyczny",
+   "color": "#d2402e",
+   "hint": "przy fontannie",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/245-park-im-erazma-i-anny-jerzmanowskich.html",
+   "center": [
+    50.01798,
+    19.99508
+   ]
+  },
+  {
+   "id": "p43",
+   "number": 43,
+   "name": "Park przy Dworze Czeczów",
+   "category": "historical",
+   "categoryLabel": "Historyczny",
+   "color": "#d2402e",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1689-park-przy-dworze-czeczow.html",
+   "center": [
+    50.01436,
+    20.03971
+   ]
+  },
+  {
+   "id": "p44",
+   "number": 44,
+   "name": "Park Rżąka",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/250-park-rzaka.html",
+   "center": [
+    50.00838075740782,
+    20.008105781244623
+   ]
+  },
+  {
+   "id": "p45",
+   "number": 45,
+   "name": "Park Aleksandry",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/242-park-aleksandry.html",
+   "center": [
+    50.0117,
+    20.01393
+   ]
+  },
+  {
+   "id": "p46",
+   "number": 46,
+   "name": "Park Lilli Wenedy",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/247-park-lilli-wenedy.html",
+   "center": [
+    50.020718560063195,
+    20.00441946443464
+   ]
+  },
+  {
+   "id": "p47",
+   "number": 47,
+   "name": "Park Aleksandry Północ",
+   "category": "forest",
+   "categoryLabel": "Leśny",
+   "color": "#2e7d32",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1890-park-aleksandry-polnoc.html",
+   "center": [
+    50.017815982508,
+    20.011720542328185
+   ]
+  },
+  {
+   "id": "p48",
+   "number": 48,
+   "name": "Park im. Wojciecha Bednarskiego",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/243-park-im-wojciecha-bednarskiego.html",
+   "center": [
+    50.0416934519135,
+    19.950195728835904
+   ]
+  },
+  {
+   "id": "p49",
+   "number": 49,
+   "name": "Park Rzeczny Ogród Płaszów",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/249-park-plaszow.html",
+   "center": [
+    50.04657,
+    19.99352
+   ]
+  },
+  {
+   "id": "p50",
+   "number": 50,
+   "name": "Park Stacja Wisła",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/445-park-stacja-wisla.html",
+   "center": [
+    50.05097,
+    19.95995
+   ]
+  },
+  {
+   "id": "p51",
+   "number": 51,
+   "name": "Park Staw Płaszowski",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/444-staw-plaszowski.html",
+   "center": [
+    50.04092,
+    19.97274
+   ]
+  },
+  {
+   "id": "p52",
+   "number": 52,
+   "name": "Planty im. Floriana Nowackiego",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/252-planty-nowackiego.html",
+   "center": [
+    50.04381624214106,
+    19.942425867282147
+   ]
+  },
+  {
+   "id": "p53",
+   "number": 53,
+   "name": "Park Miejski Bagry Wielkie",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/443-zalew-bagry.html",
+   "center": [
+    50.03462,
+    19.99085
+   ]
+  },
+  {
+   "id": "p54",
+   "number": 54,
+   "name": "Park Czyżyny",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/857-park-czyzyny.html",
+   "center": [
+    50.07946,
+    20.00137
+   ]
+  },
+  {
+   "id": "p55",
+   "number": 55,
+   "name": "Park Lotników Polskich",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/230-park-lotnikow-polskich.html",
+   "center": [
+    50.06679,
+    19.99543
+   ]
+  },
+  {
+   "id": "p56",
+   "number": 56,
+   "name": "Park Woźniców",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/2145-park-woznicow.html",
+   "center": [
+    50.06518,
+    20.0135
+   ]
+  },
+  {
+   "id": "p57",
+   "number": 57,
+   "name": "Park pil. gen. S. Skalskiego",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/233-park-skalskiego.html",
+   "center": [
+    50.08482,
+    20.00712
+   ]
+  },
+  {
+   "id": "p58",
+   "number": 58,
+   "name": "Fort Batowice",
+   "category": "historical",
+   "categoryLabel": "Historyczny",
+   "color": "#d2402e",
+   "hint": "po prawej od wejścia do fortu",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/226-fort-batowice.html",
+   "center": [
+    50.0996,
+    19.99837
+   ]
+  },
+  {
+   "id": "p59",
+   "number": 59,
+   "name": "Park Tysiąclecia",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "Przy fontannie",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/235-park-tysiaclecia.html",
+   "center": [
+    50.08934,
+    19.99844
+   ]
+  },
+  {
+   "id": "p60",
+   "number": 60,
+   "name": "Planty Mistrzejowickie",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/239-planty-mistrzejowickie.html",
+   "center": [
+    50.095920467853375,
+    20.007058270877607
+   ]
+  },
+  {
+   "id": "p61",
+   "number": 61,
+   "name": "Fort Mistrzejowice",
+   "category": "historical",
+   "categoryLabel": "Historyczny",
+   "color": "#d2402e",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/227-fort-mistrzejowice.html",
+   "center": [
+    50.10079,
+    20.01711
+   ]
+  },
+  {
+   "id": "p62",
+   "number": 62,
+   "name": "Park Zalew Nowohucki",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/237-park-zalew-nowohucki.html",
+   "center": [
+    50.07986,
+    20.05313
+   ]
+  },
+  {
+   "id": "p63",
+   "number": 63,
+   "name": "Planty Bieńczyckie",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/231-park-planty-bienczyckie.html",
+   "center": [
+    50.08477,
+    20.02647
+   ]
+  },
+  {
+   "id": "p64",
+   "number": 64,
+   "name": "Park Łuczanowice",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/228-park-luczanowice.html",
+   "center": [
+    50.10834,
+    20.11313
+   ]
+  },
+  {
+   "id": "p65",
+   "number": 65,
+   "name": "Park Jana Matejki",
+   "category": "historical",
+   "categoryLabel": "Historyczny",
+   "color": "#d2402e",
+   "hint": "Przejście od strony zalewu ma stromy stopień",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1362-park-w-wokol-dworku-matejki.html",
+   "center": [
+    50.08134,
+    20.05447
+   ]
+  },
+  {
+   "id": "p66",
+   "number": 66,
+   "name": "Park Wadów",
+   "category": "historical",
+   "categoryLabel": "Historyczny",
+   "color": "#d2402e",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/240-park-wadow.html",
+   "center": [
+    50.09986,
+    20.12541
+   ]
+  },
+  {
+   "id": "p67",
+   "number": 67,
+   "name": "Park Zielony Jar Wandy",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "Z boku amfiteatru. Widownia widzi budkę po lewej",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/241-park-zielony-jar.html",
+   "center": [
+    50.09494,
+    20.05878
+   ]
+  },
+  {
+   "id": "p68",
+   "number": 68,
+   "name": "Park Węgrzynowice",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1641-park-wegrzynowice.html",
+   "center": [
+    50.11382,
+    20.15452
+   ]
+  },
+  {
+   "id": "p69",
+   "number": 69,
+   "name": "Park im. Stefana Żeromskiego",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "blisko domku na drzewie",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/238-park-zeromskiego.html",
+   "center": [
+    50.06665,
+    20.04194
+   ]
+  },
+  {
+   "id": "p70",
+   "number": 70,
+   "name": "Park Klasztorna",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/229-park-klasztorna.html",
+   "center": [
+    50.06669,
+    20.05066
+   ]
+  },
+  {
+   "id": "p71",
+   "number": 71,
+   "name": "Park Kultury",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1640-park-kultury.html",
+   "center": [
+    50.07112,
+    20.03388
+   ]
+  },
+  {
+   "id": "p72",
+   "number": 72,
+   "name": "Park Ratuszowy",
+   "category": "historical",
+   "categoryLabel": "Historyczny",
+   "color": "#d2402e",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/232-park-ratuszowy.html",
+   "center": [
+    50.075428,
+    20.039202
+   ]
+  },
+  {
+   "id": "p73",
+   "number": 73,
+   "name": "Park Szwedzki",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/234-park-szwedzki.html",
+   "center": [
+    50.07468,
+    20.04426
+   ]
+  },
+  {
+   "id": "p74",
+   "number": 74,
+   "name": "Park Wiśniowy Sad",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "obok budynku Oś. Spółdzielcze 5 wchodzi się w park i zaraz stoi budka na widoku",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/236-park-wisniowy-sad.html",
+   "center": [
+    50.07629,
+    20.02709
+   ]
+  },
+  {
+   "id": "p75",
+   "number": 75,
+   "name": "Park Przylasek Wyciąski",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1616-park-przylasek-wyciaski.html",
+   "center": [
+    50.05571,
+    20.180628
+   ]
+  },
+  {
+   "id": "p76",
+   "number": 76,
+   "name": "Park Przylasek Rusiecki",
+   "category": "waterside",
+   "categoryLabel": "Wodny",
+   "color": "#2563eb",
+   "hint": "",
+   "detailsUrl": "https://krakowwzieleni.pl/project/park-przylasek-rusiecki/",
+   "center": [
+    50.04642,
+    20.15827
+   ]
+  },
+  {
+   "id": "p77",
+   "number": 77,
+   "name": "Park Fort 2 \"Kościuszko\" im. prof. Janusza Bogdanowskiego",
+   "category": "historical",
+   "categoryLabel": "Historyczny",
+   "color": "#d2402e",
+   "hint": "zaraz po lewej stronie po wyjechaniu na kopiec, rzuci się w oczy od razu",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/1824-park-fort-2-kosciuszko-im-prof-janusza-bogdanowskiego.html",
+   "center": [
+    50.05433,
+    19.89293
+   ]
+  },
+  {
+   "id": "p78",
+   "number": 78,
+   "name": "Park Kurczaba",
+   "category": "common",
+   "categoryLabel": "Zwykły",
+   "color": "#2b2b2b",
+   "hint": "przy tablicy o ślimakach",
+   "detailsUrl": "https://zzm.krakow.pl/lista-parkow/2017-park-kurczaba.html",
+   "center": [
+    50.01292,
+    20.00503
+   ]
+  }
+ ]
+}

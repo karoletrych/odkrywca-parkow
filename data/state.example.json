@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "visited": {},
+  "routes": [],
+  "settings": {
+    "n": 5,
+    "kinds": ["historical", "waterside", "forest", "common"],
+    "skipDone": true,
+    "loop": false,
+    "start": { "lat": 50.0617, "lon": 19.9373, "label": "Rynek Główny" }
+  }
+}
