@@ -1,6 +1,7 @@
 # Prywatne dane i cache — nie trafiają do repozytorium
 data/state.json
 data/state.json.tmp
+data/parks.json
 data/matrix.json
 data/tiles/
 *.log

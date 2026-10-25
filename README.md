@@ -1,85 +1,109 @@
 # Odkrywca krakowskich parków
 
-Lokalna aplikacja webowa: mapa 78 punktów z odznaki **Odkrywca Krakowskich Parków**, dziennik odwiedzin i planer dziennej trasy pieszej.
+Aplikacja webowa (PWA) z mapą **78 punktów** z odznaki **Odkrywca Krakowskich Parków**, dziennikiem odwiedzin i planerem dziennej trasy pieszej.
 
-- punkty i kategorie pochodzą z [odkrywca-parkow.pl](https://odkrywca-parkow.pl) (dane ZZM Kraków),
-- „zrobione” i zapisane trasy trzymane są na Twoim dysku (`data/state.json`),
-- trasę można ułożyć od dowolnego startu, dla wybranej liczby parków, a długość liczona jest po pieszych szlakach z OpenStreetMap.
+Działa **w całości w przeglądarce** — nie ma backendu, konta ani bazy danych. Postępy, trasy i ustawienia są zapisywane w `localStorage` na danym urządzeniu. Możesz je wyeksportować i zaimportować jako plik JSON.
 
-## Uruchomienie
+## Online
 
-Najprościej: serwer jest już zarejestrowany jako zadanie systemowe **OdkrywcaParkow** i startuje w tle przy logowaniu. Aplikacja jest pod `http://localhost:7777`.
+**https://karoletrych.github.io/odkrywca-parkow/**
 
-Sterowanie serwerem w tle (PowerShell):
+Na telefonie: otwórz adres, a następnie „Dodaj do ekranu głównego” / „Zainstaluj aplikację”. Aplikacja jest PWA i po pierwszym otwarciu działa też offline (mapa wymaga internetu, ale trasa i dane nie).
+
+## Funkcje
+
+- 78 oficjalnych punktów i 4 kategorie (historyczny, wodny, leśny, zwykły),
+- oznaczanie parków jako zrobione z datą, pasek postępu,
+- start z dowolnego miejsca (klik na mapie, przeciągnięcie pinezki, lokalizacja GPS lub park),
+- wybór liczby parków (`−` / `+`, suwak, kafelki), kategorie, pomijanie zrobionych, opcja powrotu,
+- pod licznikiem parków: podgląd zmiany długości trasy dla `−1`, `+1`…`+4` parków,
+- trasa piesza po realnych szlakach (OSRM/Valhalla), heuristiczne rozwiązanie „najtańsze wstawianie + 2-opt + wymiana przystanków”,
+- zapisane trasy: podgląd, GPX, Google Maps (do 10 punktów), usuwanie, zbiorcze „Oznacz zrobione”,
+- eksport/import wszystkich danych w JSON, z walidacją pliku,
+- PWA: instalacja, cache aplikacji, tryb offline.
+
+## Korzystanie z danych
+
+Kliknij ikonę **bazy danych** w prawym górnym rogu:
+
+- **Eksportuj wszystko (JSON)** — kopia postępów, tras i ustawień,
+- **Importuj z pliku** — po wczytaniu wybierz **Połącz z obecnymi** (dodaje brakujące wpisy) albo **Zastąp obecne**,
+- **Usuń wszystkie dane** — czyści `localStorage` (najpierw zrób kopię).
+
+Import akceptuje też stary plik `data/state.json` z poprzedniej wersji serwerowej. Walidacja odrzuca nieznane parki, limituje rozmiar pliku (2 MB), poprawia daty i czyści etykiety; HTML z pliku nigdy nie jest wstrzykiwany do strony.
+
+Dane są przypisane do **originu** przeglądarki. `localhost:7777`, `127.0.0.1:7777` i `karoletrych.github.io` to trzy różne magazyny — skopiuj dane przez eksport/import, jeśli zmieniasz adres.
+
+## Uruchomienie lokalne (opcjonalnie)
+
+Aplikacja nie potrzebuje serwera. Do lokalnego podglądu możesz użyć dowolnego serwera statycznego skierowanego na `public/`:
 
 ```powershell
-Start-ScheduledTask -TaskName "OdkrywcaParkow"   # uruchom
-Stop-ScheduledTask  -TaskName "OdkrywcaParkow"   # zatrzymaj
-Get-ScheduledTask   -TaskName "OdkrywcaParkow"   # status
+node server.js
+# http://127.0.0.1:7777/
 ```
 
-Ręcznie: dwuklik `start.cmd` (otwiera przeglądarkę) albo `node server.js`. Logi trafiają do `data/server.log`.
+`server.js` to **tylko** serwer plików statycznych: nie ma API, nie czyta `data/state.json` i nie zapisuje niczego. Domyślnie słucha na `127.0.0.1` (nie na całej sieci). Możesz też użyć `start.cmd` lub zadania **OdkrywcaParkow**.
 
-## Telefon i VPN
+Nie otwieraj `public/index.html` bezpośrednio przez `file://` — przeglądarka zablokuje `fetch` danych i service worker.
 
-- W aplikacji kliknij ikonę telefonu w prawym górnym rogu — pokaże gotowe adresy (sieć lokalna i VPN) z przyciskiem „Kopiuj”.
-- Ta sama sieć Wi-Fi: `http://<adres-LAN>:7777` (adres wypisuje też konsola).
-- VPN Tailscale (działa z dowolnej sieci):
-  1. Tailscale na telefonie i komputerze, to samo konto,
-  2. na komputerze: `tailscale serve --bg 7777`,
-  3. `tailscale serve status` pokaże adres HTTPS, np. `https://pc.tailxxxx.ts.net/`.
-- Serwer nasłuchuje na `0.0.0.0`, więc działa przez VPN i sieć lokalną. Windows może poprosić o zgodę zapory — zezwól Node.js w sieci prywatnej.
-- Gdy router włącza izolację klientów (AP isolation), sam LAN nie zadziała — użyj Tailscale.
+## Prywatność i bezpieczeństwo
 
-## Obsługa
+- Postępy i ustawienia **nie są wysyłane na żaden serwer**; zostają w `localStorage`.
+- Do wyznaczenia trasy przeglądarka wysyła **tylko współrzędne** startu i parków do publicznych usług OSM:
+  - [OSRM](https://project-osrm.org/) — macierz i geometria trasy,
+  - [Valhalla/FOSSGIS](https://valhalla1.openstreetmap.de/) — dojście ze startu,
+  - [Nominatim](https://nominatim.openstreetmap.org/) — nazwa wybranego startu (max. 1 zapytanie/s, z cache).
+- Kafelki mapy pochodzą z [OpenStreetMap](https://www.openstreetmap.org/copyright). Aplikacja jest mała i nie masuje serwerów OSM; przy większym ruchu użyj własnego dostawcy kafelków.
+- Strona ma CSP ograniczające skrypty, połączenia i obrazki; Leaflet i generator QR są vendored lokalnie, bez CDN i analityki.
+- Import JSON jest walidowany i limitowany; etykiety są escapowane przy renderowaniu, a renderowanie nie używa `eval`.
+- Repozytorium jest publiczne, ale **nie zawiera** `data/state.json` ani logów. Workflow GitHub Actions dodatkowo blokuje deploy, jeśli w `public/` znajdzie prywatne pliki.
 
-- **Start** — domyślnie Rynek Główny. Możesz kliknąć „Wskaż start na mapie”, przeciągnąć pinezkę **A**, użyć „Moja lokalizacja” albo w dymku parku wybrać „Ustaw jako start”.
-- **Parki na dziś** — liczba zmieniana przez `−` / `+`, suwak, kafelki (3/5/7/10/15) lub klawisze `+` / `-`. Trasa przelicza się od razu. Pod przyciskami widać, ile kilometrów doda (lub odejmie) zmiana o −1, +1, +2, +3 i +4 parki — kliknięcie od razu ustawia tę liczbę.
-- **Co liczyć** — kategorie (historyczne, wodne, leśne, zwykłe), pomijanie już zrobionych, opcja powrotu do startu.
-- **Zrobione** — przycisk w dymku parku (z datą) albo checkbox na liście „Parki”. Postęp zapisuje się automatycznie.
-- **Zapisz** — zapisuje aktualną trasę w zakładce „Zapisane”; można ją później pokazać na mapie lub usunąć.
-- **Pobierz GPX / Nawiguj** — GPX z całą trasą i punktami otworzysz w OsmAnd, Locus Map, Komoot, Garminie itp. „Nawiguj” otwiera Google Maps (do 10 punktów; pełna trasa jest w GPX). Zapisane trasy też mają przycisk GPX.
-- Kliknięcie przystanku na liście przybliża go na mapie. `Esc` zamyka dymek / anuluje wskazywanie startu.
+Ważne ograniczenie GitHub Pages: `localStorage` jest wspólny dla całego originu `karoletrych.github.io`. Inna aplikacja hostowana na tym samym koncie GitHub Pages mogłaby teoretycznie odczytać te dane. Jeśli to istotne, hostuj tę aplikację na osobnym koncie lub własnej domenie. Więcej w [SECURITY.md](SECURITY.md).
 
-Kolory pinezek odpowiadają kategoriom z odznaki: czerwony — historyczny, niebieski — wodny, zielony — leśny, czarny — zwykły.
-
-## Eksport trasy
-
-- **GPX** zawiera waypointy wszystkich parków (nazwa, numer, kategoria, wskazówka o pieczątce) oraz ślad trasy po pieszych ścieżkach — do importu w OsmAnd, Locus Map, Komoot, Garmin Connect, Wikiloc itd.
-- **Google Maps** — link „Nawiguj” prowadzi do trasy pieszej przez wszystkie punkty, ale Google Maps przyjmie maks. 10 punktów. Dla dłuższych tras użyj GPX.
-- Pliki GPX generowane są lokalnie w przeglądarce; nic nie jest wysyłane na zewnątrz.
-
-## Jak liczona jest trasa
-
-- Odległości piesze pobierane są z publicznych usług OSM (Valhalla dla dojścia ze startu, OSRM dla macierzy park–park) i zapisywane w `data/matrix.json`.
-- Dobór parków i kolejność: wstawianie najmniejszym kosztem + poprawa 2-opt + wymiana przystanków. To heurystyka — daje bardzo dobre, ale nie zawsze formalnie optymalne rozwiązanie.
-- Czas pieszo szacowany jest na podstawie dystansu (ok. 4,8 km/h).
-- Gdy usługa tras jest chwilowo niedostępna, część odległości liczona jest w linii prostej (aplikacja to sygnalizuje).
-
-## Dane i pliki
+## Struktura
 
 ```
-server.js              serwer HTTP (bez zależności), API, kafelki mapy z cache
-public/                interfejs (Leaflet vendored lokalnie)
-data/parks.json        punkty parków (generowane z official-parks.json)
-data/official-parks.json  surowa lista z odkrywca-parkow.pl
-data/state.json        Twoje odwiedzone parki, zapisane trasy, ustawienia
-data/matrix.json       cache macierzy odległości
-data/tiles/            cache kafelków OpenStreetMap
-data/server.log        log serwera (rotowany przy 2 MB)
-start.cmd              ręczne uruchomienie w oknie
-start-background.vbs   uruchomienie bez okna (używane przez zadanie)
+public/index.html          interfejs
+public/app.js              mapa, UI, import/eksport, trasa w przeglądarce
+public/state.js            walidacja i scalanie danych (localStorage/JSON)
+public/route.js            heurystyka wyboru i kolejności parków
+public/data/parks.json     78 punktów (generowane)
+public/data/matrix.json    macierz odległości park–park (generowana)
+public/vendor/             Leaflet i generator QR (lokalnie)
+public/manifest.webmanifest, sw.js, icons/   PWA
+server.js                  opcjonalny serwer statyczny do lokalnego podglądu
+data/official-parks.json   surowa lista z odkrywca-parkow.pl
+data/state.example.json    przykład stanu (bez danych osobowych)
+data/state.json            Twoje dane z poprzedniej wersji — ignorowane przez git
+tools/import-official.js   przebudowa parks.json
+tools/build-matrix.js      przebudowa matrix.json (OSRM)
 ```
 
-`data/state.json` zawiera Twoje odwiedzone parki, zapisane trasy i ustawienia — jest ignorowany w repozytorium (wzór: `data/state.example.json`). Kafelki i macierz odległości też są lokalnym cache'em.
+## Aktualizacja punktów
 
-Aktualizacja listy punktów: podmień `data/official-parks.json` i uruchom `node tools/import-official.js`, następnie usuń `data/matrix.json` (macierz przeliczy się przy starcie).
+```powershell
+# 1. Podmień data/official-parks.json (lub podaj ścieżkę argumentem)
+node tools/import-official.js
+# 2. Przebuduj macierz, bo zmieniła się liczba/order punktów
+node tools/build-matrix.js
+# 3. Sprawdź i wypchnij
+npm run check   # lub: node --check ...
+git add public/data/parks.json public/data/matrix.json
+git commit -m "Aktualizacja punktów"
+git push
+```
 
-## Uwagi
+Jeśli `matrix.json` nie pasuje do liczby parków, aplikacja sama zbuduje przybliżoną macierz w linii prostej i pokaże odpowiednią informację.
 
-- Pierwsze uruchomienie może potrwać kilkanaście sekund — liczona jest macierz odległości (potem jest cache).
-- Kafelki mapy są pobierane z OpenStreetMap i cache’owane lokalnie; bez internetu zadziała to, co już zostało pobrane.
-- Publiczne serwery tras OSM mają limity — przy normalnym, domowym użyciu wystarczają.
-- Aplikacja nie jest powiązana z ZZM ani twórcami strony odkrywca-parkow.pl.
+## Licencja i źródła
 
-Źródła: punkty — odkrywca-parkow.pl / ZZM Kraków; mapa — © OpenStreetMap; trasowanie — OSRM / Valhalla (FOSSGIS).
+Kod aplikacji: bez wyraźnej licencji (wszelkie prawa zastrzeżone) — dodaj wybraną licencję, jeśli chcesz go współdzielić.
+
+- punkty i opisy: [odkrywca-parkow.pl](https://odkrywca-parkow.pl) / ZZM Kraków,
+- mapa: © OpenStreetMap contributors,
+- trasowanie: OSRM / Valhalla (FOSSGIS),
+- Leaflet: BSD-2-Clause,
+- generator QR: Kazuhiko Arase (MIT).
+
+Aplikacja nie jest powiązana z ZZM ani twórcami strony odkrywca-parkow.pl.

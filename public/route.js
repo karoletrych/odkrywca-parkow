@@ -1,4 +1,8 @@
 'use strict';
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.ParkRoute = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
 // Heurystyka wyznaczania trasy pieszej: wybór k parków + kolejność zwiedzania.
 // Koszty to rzeczywiste odległości z sieci dróg (macierz), nie linie proste.
 
@@ -160,4 +164,5 @@ function solve(m, k, ds, d, loop) {
   return { order: best, total: bestLen, leg };
 }
 
-module.exports = { solve };
+return { solve };
+});

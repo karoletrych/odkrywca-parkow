@@ -1,0 +1,27 @@
+{
+  "name": "Odkrywca krakowskich parków",
+  "short_name": "Odkrywca",
+  "description": "Mapa punktów Odkrywcy Krakowskich Parków, dziennik odwiedzin i planer trasy pieszej.",
+  "lang": "pl",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f1e9",
+  "theme_color": "#1f5f43",
+  "categories": ["travel", "lifestyle", "navigation"],
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

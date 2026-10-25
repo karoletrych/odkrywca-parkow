@@ -4,9 +4,23 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#1f5f43" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org; connect-src 'self' https://valhalla1.openstreetmap.de https://router.project-osrm.org https://nominatim.openstreetmap.org; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta
+      name="description"
+      content="Mapa 78 punktów Odkrywcy Krakowskich Parków, dziennik odwiedzin i planer trasy pieszej. Działa w przeglądarce, dane zostają na urządzeniu."
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Odkrywca" />
     <title>Odkrywca krakowskich parków</title>
-    <link rel="stylesheet" href="/vendor/leaflet.css" />
-    <link rel="stylesheet" href="/style.css" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+    <link rel="stylesheet" href="./vendor/leaflet.css" />
+    <link rel="stylesheet" href="./style.css" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f5f43'/%3E%3Cpath d='M16 25c0-7 3-11 9-13-1 8-4 11-9 13zm0 0c0-5-2-8-7-9 1 6 3 8 7 9z' fill='%23f2efe4'/%3E%3C/svg%3E" />
   </head>
   <body>
@@ -28,9 +42,14 @@
         <div class="journey-top"><strong id="doneCount">0</strong> z <span id="allCount">—</span> zrobione</div>
         <div class="bar"><span id="barFill"></span></div>
       </div>
-      <button class="net-btn" id="btnNet" type="button" title="Otwórz na telefonie / VPN" aria-label="Otwórz na telefonie lub w VPN">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>
-      </button>
+      <div class="top-actions">
+        <button class="net-btn" id="btnData" type="button" title="Dane i kopia zapasowa" aria-label="Dane i kopia zapasowa">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5C4 6 7.6 4.5 12 4.5s8 1.5 8 3-3.6 3-8 3-8-1.5-8-3Z"/><path d="M4 7.5v9c0 1.5 3.6 3 8 3s8-1.5 8-3v-9"/><path d="M4 12c0 1.5 3.6 3 8 3s8-1.5 8-3"/></svg>
+        </button>
+        <button class="net-btn" id="btnNet" type="button" title="Otwórz na telefonie" aria-label="Otwórz na telefonie">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>
+        </button>
+      </div>
     </header>
 
     <main class="layout">
@@ -150,7 +169,7 @@
           <section class="tabpane" id="pane-saved">
             <div class="saved-head">
               <h2>Zapisane trasy</h2>
-              <p>Twoje wycieczki zostają na dysku — możesz do nich wrócić w każdej chwili.</p>
+              <p>Twoje wycieczki zapisują się w tej przeglądarce — możesz do nich wrócić w każdej chwili.</p>
             </div>
             <div class="saved-list" id="savedList"></div>
           </section>
@@ -179,14 +198,38 @@
         <h2>Otwórz na telefonie</h2>
         <button class="net-close" type="button" id="btnNetClose" aria-label="Zamknij">×</button>
       </div>
-      <p class="net-desc">Te adresy działają na innych urządzeniach w sieci lokalnej lub w Twoim VPN (Tailscale). Telefon musi być w tej samej sieci albo mieć włączony Tailscale.</p>
+      <p class="net-desc">Zeskanuj kod albo otwórz adres na telefonie. Aplikacja działa w chmurze (GitHub Pages) i nie potrzebuje Twojego komputera.</p>
       <div class="net-qr" id="netQr"></div>
-      <div class="net-list" id="netList"><div class="net-loading">Sprawdzam adresy…</div></div>
-      <p class="net-note">Serwer działa w tle na tym komputerze. Gdy go zatrzymasz, adresy przestaną odpowiadać.</p>
+      <div class="net-list" id="netList"><div class="net-loading">Przygotowuję adres…</div></div>
+      <button class="data-btn primary wide" id="btnInstall" type="button" hidden>Zainstaluj na urządzeniu</button>
+      <p class="net-note">Dane są zapisane osobno na każdym urządzeniu. Na telefonie otwórz aplikację i zaimportuj kopię w „Dane”.</p>
     </dialog>
 
-    <script src="/vendor/leaflet.js"></script>
-    <script src="/vendor/qrcode.js"></script>
-    <script src="/app.js"></script>
+    <dialog id="dataDialog" class="net-dialog data-dialog">
+      <div class="net-head">
+        <h2>Dane aplikacji</h2>
+        <button class="net-close" type="button" id="btnDataClose" aria-label="Zamknij">×</button>
+      </div>
+      <p class="net-desc">Postępy, trasy i ustawienia są zapisane tylko w tej przeglądarce. Zrób kopię, żeby przenieść je na telefon, zabezpieczyć albo odzyskać po wyczyszczeniu danych.</p>
+      <div class="data-stats" id="dataStats"></div>
+      <div class="data-actions">
+        <button class="data-btn primary" type="button" id="btnExport">Eksportuj wszystko (JSON)</button>
+        <button class="data-btn" type="button" id="btnImport">Importuj z pliku</button>
+        <input type="file" id="importFile" accept=".json,application/json" hidden />
+      </div>
+      <div class="data-preview" id="dataPreview" hidden></div>
+      <div class="data-danger">
+        <button class="data-btn danger" type="button" id="btnReset">Usuń wszystkie dane</button>
+      </div>
+      <p class="net-note">Import sprawdza strukturę pliku i pomija nieznane punkty. Postępy nie są wysyłane na serwer; do liczenia tras wysyłane są tylko współrzędne do publicznych usług OSM.</p>
+    </dialog>
+
+    <noscript>Ta aplikacja wymaga włączonego JavaScriptu.</noscript>
+
+    <script src="./vendor/leaflet.js"></script>
+    <script src="./vendor/qrcode.js"></script>
+    <script src="./route.js"></script>
+    <script src="./state.js"></script>
+    <script src="./app.js"></script>
   </body>
 </html>

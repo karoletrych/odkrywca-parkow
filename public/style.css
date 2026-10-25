@@ -170,6 +170,64 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .net-note { margin: 14px 0 0; font-size: 11px; line-height: 1.5; color: var(--muted); }
 .net-loading { font-size: 12.5px; color: var(--muted); padding: 8px 2px; }
 
+.top-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+
+/* ------------------------------------------------------------- dane JSON */
+
+.data-dialog {
+  width: min(470px, calc(100vw - 24px));
+  max-height: min(88vh, 780px);
+  overflow: auto;
+}
+.data-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 8px;
+  margin: 4px 0 14px;
+}
+.data-stat {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 9px 10px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.data-stat strong { display: block; color: var(--ink); font-size: 15px; margin-bottom: 1px; }
+.data-actions { display: grid; gap: 8px; }
+.data-btn {
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.data-btn:hover { border-color: var(--green-mid); color: var(--green); }
+.data-btn.primary { background: var(--green); border-color: var(--green); color: #fff; }
+.data-btn.primary:hover { background: var(--green-mid); color: #fff; }
+.data-btn.danger { color: #a83226; border-color: #ecc9c2; background: #fff8f5; }
+.data-btn.danger:hover { border-color: #d2402e; color: #8f2118; }
+.data-btn.wide { width: 100%; margin-top: 10px; }
+.data-preview {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 11px;
+}
+.data-preview-head { font-size: 12.5px; line-height: 1.45; }
+.data-preview-sub { margin-top: 4px; font-size: 11px; color: var(--muted); line-height: 1.45; }
+.data-preview-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.data-preview-actions .data-btn { flex: 1 1 120px; padding: 8px 10px; font-size: 12px; }
+.data-warn { margin-top: 7px; font-size: 11px; color: #8a5a00; line-height: 1.4; }
+.data-error { font-size: 12.5px; color: #a83226; line-height: 1.45; }
+.data-danger { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+
 /* ---------------------------------------------------------------- layout */
 
 .layout {

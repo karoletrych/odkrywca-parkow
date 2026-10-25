@@ -1,9 +1,10 @@
-// Buduje data/parks.json z oficjalnej listy punktów Odkrywcy Krakowskich Parków.
+// Buduje public/data/parks.json z oficjalnej listy punktów Odkrywcy Krakowskich Parków.
 // Źródło: https://odkrywca-parkow.pl/park_data.json
 const fs = require('fs');
 const path = require('path');
 
 const DATA = path.join(__dirname, '..', 'data');
+const OUT = path.join(__dirname, '..', 'public', 'data');
 const rawPath = process.argv[2] || path.join(DATA, 'official-parks.json');
 const raw = JSON.parse(fs.readFileSync(rawPath, 'utf8'));
 
@@ -35,7 +36,7 @@ const parks = raw
 
 const payload = {
   fetchedAt: new Date().toISOString(),
-  source: 'odkrywca-parkow.pl (park_data.json) · punkty ZZM Kraków',
+  source: 'odkrywca-parkow.pl (park_data.json) — punkty ZZM Kraków',
   count: parks.length,
   categories: Object.entries(CATEGORY).map(([id, c]) => ({
     id,
@@ -46,6 +47,7 @@ const payload = {
   parks,
 };
 
-fs.writeFileSync(path.join(DATA, 'parks.json'), JSON.stringify(payload, null, 1));
-console.log(`Zapisano ${parks.length} punktów.`);
+fs.mkdirSync(OUT, { recursive: true });
+fs.writeFileSync(path.join(OUT, 'parks.json'), JSON.stringify(payload, null, 1));
+console.log(`Zapisano ${parks.length} punktów w public/data/parks.json.`);
 console.log(payload.categories);

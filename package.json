@@ -1,11 +1,13 @@
 {
   "name": "odkrywca-krakowskich-parkow",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "Lokalna mapa, dziennik odwiedzin i planer trasy po parkach z odznaki Odkrywca Krakowskich Parków",
+  "description": "Mapa, dziennik odwiedzin i planer trasy po parkach z odznaki Odkrywca Krakowskich Parków. W pełni po stronie przeglądarki.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "check": "node --check server.js && node --check public/app.js && node --check public/state.js && node --check public/route.js && node --check public/sw.js",
+    "import-parks": "node tools/import-official.js"
   },
   "engines": {
     "node": ">=18"

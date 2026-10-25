@@ -3,17 +3,23 @@
 /* ------------------------------------------------------------------ stan */
 
 const DEFAULT_START = { lat: 50.0617, lon: 19.9373, label: 'Rynek Główny' };
+const PUBLIC_URL = 'https://karoletrych.github.io/odkrywca-parkow/';
+const OSRM = 'https://router.project-osrm.org';
+const VALHALLA = 'https://valhalla1.openstreetmap.de';
+const NOMINATIM = 'https://nominatim.openstreetmap.org';
+const START_ROW_KEY = 'odkrywca-parkow.startrows.v1';
 
 const app = {
   parks: [],
   byId: new Map(),
+  idx: new Map(),
   categories: [],
   catById: new Map(),
   visited: {},
   routes: [],
   activeCats: new Set(),
   settings: { n: 5, skipDone: true, loop: false, start: DEFAULT_START },
-  matrix: { ready: false, progress: 0, total: 1 },
+  matrix: { ready: false, approx: false, d: null },
   route: null,
   routeCoords: null,
   seq: 0,
@@ -30,9 +36,17 @@ const app = {
   listFilter: 'all',
   search: '',
   toastTimer: null,
-  pendingTimer: null,
   settingsTimer: null,
   currentTab: 'route',
+  storageWarned: false,
+  startRows: new Map(),
+  startRowStore: {},
+  pendingImport: null,
+  installPrompt: null,
+  geoQueue: Promise.resolve(),
+  lastGeocode: 0,
+  geoCache: new Map(),
+  geometryCache: new Map(),
 };
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -82,31 +96,62 @@ function toast(msg) {
   app.toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
 }
 
-async function api(path, body) {
-  const opts = body
-    ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
-    : {};
-  if (body && body.__delete) {
-    opts.method = 'DELETE';
-    delete opts.body;
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function fetchJson(url, timeout = 15000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeout);
+  try {
+    const res = await fetch(url, {
+      signal: ctrl.signal,
+      headers: { Accept: 'application/json' },
+      referrerPolicy: 'strict-origin-when-cross-origin',
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
   }
-  const res = await fetch(path, opts);
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok && !json.pending) throw new Error(json.error || `Błąd ${res.status}`);
-  return json;
 }
 
-function saveSettings() {
-  clearTimeout(app.settingsTimer);
-  app.settingsTimer = setTimeout(() => {
-    api('/api/settings', {
+const haversine = (a, b) => {
+  const R = 6371000;
+  const dLat = ((b[0] - a[0]) * Math.PI) / 180;
+  const dLon = ((b[1] - a[1]) * Math.PI) / 180;
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((a[0] * Math.PI) / 180) * Math.cos((b[0] * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+};
+const airDist = (a, b) => haversine(a, b) * 1.32;
+
+function snapshotState() {
+  return {
+    version: ParkState.STORAGE_VERSION,
+    visited: app.visited,
+    routes: app.routes,
+    settings: {
       n: app.settings.n,
       kinds: [...app.activeCats],
       skipDone: app.settings.skipDone,
       loop: app.settings.loop,
       start: app.settings.start,
-    }).catch(() => {});
-  }, 400);
+    },
+  };
+}
+
+function persistState() {
+  const ok = ParkState.save(snapshotState());
+  if (!ok && !app.storageWarned) {
+    app.storageWarned = true;
+    toast('Nie udało się zapisać w tej przeglądarce. Sprawdź miejsce i tryb prywatny.');
+  }
+  return ok;
+}
+
+function saveSettings() {
+  clearTimeout(app.settingsTimer);
+  app.settingsTimer = setTimeout(() => persistState(), 300);
 }
 
 /* ------------------------------------------------------------------ mapa */
@@ -141,10 +186,11 @@ function setupMap() {
   });
   map.addControl(new FitAll());
 
-  L.tileLayer('/tiles/{z}/{x}/{y}.png', {
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     minZoom: 10,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
   }).addTo(map);
 
   app.map = map;
@@ -262,10 +308,10 @@ async function setStart(lat, lon, label, { fit = false } = {}) {
   saveSettings();
   computeRoute({ fit });
   if (!label) {
-    api(`/api/geocode?lat=${lat.toFixed(5)}&lon=${lon.toFixed(5)}`)
-      .then((r) => {
-        if (r.label && app.settings.start.lat === lat && app.settings.start.lon === lon) {
-          app.settings.start.label = r.label;
+    reverseGeocode(lat, lon)
+      .then((labelText) => {
+        if (labelText && app.settings.start.lat === lat && app.settings.start.lon === lon) {
+          app.settings.start.label = labelText;
           renderStart();
           saveSettings();
         }
@@ -349,7 +395,7 @@ function renderRoute(res) {
   });
 
   $('#routeNote').innerHTML = res.approx
-    ? 'Część odległości policzona w linii prostej — serwer tras był chwilowo niedostępny.'
+    ? 'Część odległości policzona w linii prostej — usługa tras była chwilowo niedostępna.'
     : 'Długość liczona po pieszych szlakach z OpenStreetMap, tempo ok. 4,8 km/h.';
 
   const missing = res.requested - res.count;
@@ -368,17 +414,263 @@ function renderRoute(res) {
   renderParkList();
 }
 
+/* -------------------------------------------------- trasa (w przeglądarce) */
+
+function loadStartRows() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(START_ROW_KEY) || '{}');
+    if (!raw || typeof raw !== 'object') return;
+    for (const [key, entry] of Object.entries(raw)) {
+      if (!entry || !Array.isArray(entry.ds) || entry.ds.length !== app.parks.length) continue;
+      if (!entry.ds.every((v) => Number.isFinite(v))) continue;
+      app.startRowStore[key] = {
+        ds: Float64Array.from(entry.ds),
+        approx: !!entry.approx,
+        at: Number(entry.at) || 0,
+      };
+    }
+  } catch {}
+}
+
+function saveStartRows() {
+  try {
+    const entries = Object.entries(app.startRowStore)
+      .sort((a, b) => (a[1].at || 0) - (b[1].at || 0))
+      .slice(-8);
+    const out = {};
+    for (const [key, row] of entries) {
+      out[key] = { ds: Array.from(row.ds, (v) => Math.round(v)), approx: !!row.approx, at: row.at || 0 };
+    }
+    localStorage.setItem(START_ROW_KEY, JSON.stringify(out));
+  } catch {}
+}
+
+async function getStartRow(start) {
+  const key = `${start.lat.toFixed(4)},${start.lon.toFixed(4)}`;
+  if (app.startRows.has(key)) return app.startRows.get(key);
+
+  const stored = app.startRowStore[key];
+  if (stored && stored.ds.length === app.parks.length) {
+    app.startRows.set(key, stored);
+    return stored;
+  }
+
+  const promise = fetchStartRow(start)
+    .then((row) => {
+      app.startRows.set(key, row);
+      app.startRowStore[key] = row;
+      saveStartRows();
+      return row;
+    })
+    .catch((err) => {
+      app.startRows.delete(key);
+      throw err;
+    });
+  app.startRows.set(key, promise);
+  return promise;
+}
+
+async function fetchStartRow(start) {
+  const coords = app.parks.map((p) => p.center);
+  let approx = false;
+
+  // Valhalla: prawdziwe odległości piesze. Publiczny endpoint ma CORS.
+  try {
+    const body = {
+      sources: [{ lat: start.lat, lon: start.lon }],
+      targets: coords.map(([lat, lon]) => ({ lat, lon })),
+      costing: 'pedestrian',
+    };
+    const json = await fetchJson(
+      `${VALHALLA}/sources_to_targets?json=${encodeURIComponent(JSON.stringify(body))}`,
+      9000
+    );
+    const row = json.sources_to_targets?.[0];
+    if (!Array.isArray(row) || row.length !== coords.length) throw new Error('zła odpowiedź Valhalla');
+    const ds = new Float64Array(coords.length);
+    for (let i = 0; i < coords.length; i++) {
+      const distance = row[i]?.distance;
+      if (Number.isFinite(distance)) ds[i] = distance * 1000;
+      else {
+        ds[i] = airDist([start.lat, start.lon], coords[i]);
+        approx = true;
+      }
+    }
+    return { ds, approx, at: Date.now() };
+  } catch {}
+
+  // OSRM jako druga próba.
+  try {
+    const all = [[start.lat, start.lon], ...coords];
+    const coordStr = all.map(([lat, lon]) => `${lon},${lat}`).join(';');
+    const destinations = coords.map((_, i) => i + 1).join(';');
+    const json = await fetchJson(
+      `${OSRM}/table/v1/foot/${coordStr}?sources=0&destinations=${destinations}&annotations=distance`,
+      9000
+    );
+    const row = json.distances?.[0];
+    if (!Array.isArray(row) || row.length !== coords.length) throw new Error('zła odpowiedź OSRM');
+    const ds = new Float64Array(coords.length);
+    for (let i = 0; i < coords.length; i++) {
+      if (Number.isFinite(row[i])) ds[i] = row[i];
+      else {
+        ds[i] = airDist([start.lat, start.lon], coords[i]);
+        approx = true;
+      }
+    }
+    return { ds, approx, at: Date.now() };
+  } catch {}
+
+  const ds = new Float64Array(coords.length);
+  for (let i = 0; i < coords.length; i++) ds[i] = airDist([start.lat, start.lon], coords[i]);
+  return { ds, approx: true, at: Date.now() };
+}
+
+async function reverseGeocode(lat, lon) {
+  const key = `${lat.toFixed(4)},${lon.toFixed(4)}`;
+  if (app.geoCache.has(key)) return app.geoCache.get(key);
+
+  const job = app.geoQueue.then(async () => {
+    const wait = Math.max(0, 1100 - (Date.now() - app.lastGeocode));
+    if (wait) await sleep(wait);
+    app.lastGeocode = Date.now();
+    const json = await fetchJson(
+      `${NOMINATIM}/reverse?format=jsonv2&lat=${lat.toFixed(5)}&lon=${lon.toFixed(5)}&zoom=17&accept-language=pl`,
+      12000
+    );
+    const addr = json.address || {};
+    return (
+      addr.park ||
+      addr.garden ||
+      addr.leisure ||
+      [addr.road || addr.pedestrian || addr.footway, addr.suburb || addr.neighbourhood].filter(Boolean).join(', ') ||
+      String(json.display_name || '').split(',')[0] ||
+      ''
+    );
+  });
+  app.geoQueue = job.catch(() => {});
+  const label = await job.catch(() => '');
+  if (label) {
+    if (app.geoCache.size > 60) app.geoCache.delete(app.geoCache.keys().next().value);
+    app.geoCache.set(key, label);
+  }
+  return label;
+}
+
+async function fetchGeometry(pts) {
+  if (!Array.isArray(pts) || pts.length < 2) return [];
+  const key = pts.map(([lat, lon]) => `${lat.toFixed(5)},${lon.toFixed(5)}`).join('|');
+  if (app.geometryCache.has(key)) return app.geometryCache.get(key);
+  try {
+    const coordStr = pts.map(([lat, lon]) => `${lon},${lat}`).join(';');
+    const json = await fetchJson(
+      `${OSRM}/route/v1/foot/${coordStr}?overview=full&geometries=geojson&steps=false`,
+      20000
+    );
+    const geom = json.routes?.[0]?.geometry?.coordinates || [];
+    const coords = geom.map(([lon, lat]) => [lat, lon]);
+    if (coords.length > 2) {
+      if (app.geometryCache.size > 40) app.geometryCache.delete(app.geometryCache.keys().next().value);
+      app.geometryCache.set(key, coords);
+      return coords;
+    }
+  } catch {}
+  return [];
+}
+
+async function routeFor(opts = {}) {
+  const start =
+    opts.start && Number.isFinite(Number(opts.start.lat)) && Number.isFinite(Number(opts.start.lon))
+      ? opts.start
+      : app.settings.start;
+  const kinds =
+    Array.isArray(opts.kinds) && opts.kinds.length
+      ? new Set(opts.kinds)
+      : new Set(app.categories.map((c) => c.id));
+  const skipDone = opts.skipDone !== false;
+  const loop = !!opts.loop;
+  const wanted = Math.max(1, Math.min(30, Math.round(Number(opts.n) || 5)));
+
+  const usable = app.parks.filter(
+    (p) => kinds.has(p.category) && !(skipDone && app.visited[p.id])
+  );
+  if (!usable.length) {
+    return { ok: true, empty: true, total: 0, stops: [], count: 0, requested: wanted, start, loop };
+  }
+  if (!app.matrix.ready || !app.matrix.d) throw new Error('Dane odległości jeszcze się wczytują');
+
+  const row = await getStartRow(start);
+  const m = usable.length;
+  const ds = new Float64Array(m);
+  const d = new Array(m);
+  for (let i = 0; i < m; i++) {
+    const gi = app.idx.get(usable[i].id);
+    ds[i] = row.ds[gi];
+    const source = app.matrix.d[gi];
+    const out = new Float64Array(m);
+    for (let j = 0; j < m; j++) out[j] = source[app.idx.get(usable[j].id)];
+    d[i] = out;
+  }
+
+  const k = Math.min(wanted, m);
+  const t0 = performance.now();
+  const { order } = ParkRoute.solve(m, k, ds, d, loop);
+  const solveMs = Math.round(performance.now() - t0);
+
+  const stops = [];
+  let cum = 0;
+  let prev = -1;
+  for (const i of order) {
+    const legMeters = prev < 0 ? ds[i] : d[prev][i];
+    cum += legMeters;
+    const park = usable[i];
+    stops.push({
+      ...park,
+      done: !!app.visited[park.id],
+      legFromPrev: Math.round(legMeters),
+      cum: Math.round(cum),
+    });
+    prev = i;
+  }
+
+  let total = cum;
+  if (loop && order.length) {
+    const back = ds[order[order.length - 1]];
+    stops.push({
+      id: '__start',
+      name: 'Powrót do startu',
+      center: [start.lat, start.lon],
+      legFromPrev: Math.round(back),
+      cum: Math.round(total + back),
+      isStart: true,
+    });
+    total += back;
+  }
+
+  return {
+    ok: true,
+    start,
+    loop,
+    count: order.length,
+    requested: wanted,
+    total: Math.round(total),
+    walkMinutes: Math.round(total / 78),
+    approx: !!app.matrix.approx || !!row.approx,
+    solveMs,
+    stops,
+  };
+}
+
 async function computeRoute({ fit = false } = {}) {
   const seq = ++app.seq;
   app.variantsSeq++;
   clearTimeout(app.variantsTimer);
   $('#nDeltas')?.classList.add('is-loading');
-  clearTimeout(app.pendingTimer);
-  showLoading(app.matrix.ready ? 'Liczę trasę…' : 'Układam siatkę pieszych tras…');
+  showLoading('Liczę trasę…');
 
   let res;
   try {
-    res = await api('/api/route', {
+    res = await routeFor({
       start: app.settings.start,
       n: app.settings.n,
       kinds: [...app.activeCats],
@@ -392,15 +684,6 @@ async function computeRoute({ fit = false } = {}) {
     return;
   }
   if (seq !== app.seq) return;
-
-  if (res.pending) {
-    hideVariants();
-    app.matrix = res.progress || app.matrix;
-    const pct = Math.min(99, Math.round((100 * app.matrix.progress) / Math.max(1, app.matrix.total)));
-    showLoading(`Układam siatkę pieszych tras… ${pct}%`);
-    app.pendingTimer = setTimeout(() => computeRoute({ fit }), 1200);
-    return;
-  }
 
   if (!res.ok) {
     hideVariants();
@@ -502,19 +785,17 @@ function ensureRouteVisible(res) {
 
 async function loadGeometry(res, seq) {
   const pts = routePoints(res);
-  try {
-    const r = await api('/api/geometry', { points: pts });
-    if (seq !== app.seq || !app.currentLine) return;
-    if (r.ok && r.coords && r.coords.length > 2) {
-      app.currentLine.setLatLngs(r.coords);
-      app.currentLine.setStyle({ dashArray: null });
-      app.routeCoords = r.coords;
-      if (app.routeLayer) {
-        const casing = app.routeLayer.getLayers()[0];
-        if (casing) casing.setLatLngs(r.coords);
-      }
+  const coords = await fetchGeometry(pts);
+  if (seq !== app.seq || !app.currentLine) return;
+  if (coords.length > 2) {
+    app.currentLine.setLatLngs(coords);
+    app.currentLine.setStyle({ dashArray: null });
+    app.routeCoords = coords;
+    if (app.routeLayer) {
+      const casing = app.routeLayer.getLayers()[0];
+      if (casing) casing.setLatLngs(coords);
     }
-  } catch {}
+  }
 }
 
 /* --------------------------------------------------------------- eksport */
@@ -550,7 +831,7 @@ function buildGpx(res, coords) {
   const trkpts = pts.map(([lat, lon]) => `   <trkpt lat="${lat.toFixed(6)}" lon="${lon.toFixed(6)}"/>`).join('\n');
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="Odkrywca parków (aplikacja lokalna)" xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
+<gpx version="1.1" creator="Odkrywca parków (web)" xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
  <metadata>
   <name>${xmlEsc(name)}</name>
   <time>${new Date().toISOString()}</time>
@@ -580,11 +861,8 @@ function downloadFile(text, filename, mime = 'application/gpx+xml') {
 }
 
 async function coordsForPoints(pts) {
-  try {
-    const g = await api('/api/geometry', { points: pts });
-    if (g.ok && g.coords && g.coords.length > 2) return g.coords;
-  } catch {}
-  return pts;
+  const coords = await fetchGeometry(pts);
+  return coords.length > 2 ? coords : pts;
 }
 
 async function coordsForRoute(res) {
@@ -639,7 +917,7 @@ function navigateSaved(id) {
   const stops = r.ids.map((pid) => app.byId.get(pid)).filter(Boolean);
   if (!stops.length) return toast('Ta trasa nie ma już dostępnych punktów');
   if (stops.length > 10) toast('Google Maps przyjmie 10 punktów — cała trasa jest w GPX');
-  window.open(mapsUrlForPoints(r.start, stops), '_blank', 'noopener');
+  window.open(mapsUrlForPoints(r.start, stops), '_blank', 'noopener,noreferrer');
 }
 
 async function completeSavedRoute(id) {
@@ -656,14 +934,15 @@ async function completeSavedRoute(id) {
   if (!confirm(msg)) return;
 
   let added = 0;
-  try {
-    const res = await api('/api/visited/bulk', { ids: missing, doneAt: today() });
-    added = res.added || 0;
-    if (res.state) {
-      app.visited = res.state.visited || app.visited;
-      app.routes = res.state.routes || app.routes;
-    }
-  } catch {
+  const before = { ...app.visited };
+  const doneAt = today();
+  for (const pid of missing) {
+    if (app.visited[pid]) continue;
+    app.visited[pid] = { doneAt, note: '', savedAt: new Date().toISOString() };
+    added++;
+  }
+  if (!persistState()) {
+    app.visited = before;
     return toast('Nie udało się zapisać. Spróbuj ponownie.');
   }
 
@@ -682,8 +961,9 @@ async function setVisited(id, done, date) {
   const park = app.byId.get(id);
   if (!park) return;
   const before = app.visited[id];
+  const doneAt = /^\d{4}-\d{2}-\d{2}$/.test(String(date || '')) ? String(date).slice(0, 10) : today();
 
-  if (done) app.visited[id] = { doneAt: date || today(), note: before?.note || '' };
+  if (done) app.visited[id] = { doneAt, note: before?.note || '', savedAt: new Date().toISOString() };
   else delete app.visited[id];
 
   app.map.closePopup();
@@ -696,22 +976,16 @@ async function setVisited(id, done, date) {
     if (stop) stop.done = !!done;
   }
 
-  try {
-    const r = await api('/api/visited', { id, done, doneAt: date || today() });
-    if (r.state) {
-      app.visited = r.state.visited || {};
-      app.routes = r.state.routes || app.routes;
-    }
-  } catch {
+  if (!persistState()) {
     if (done) delete app.visited[id];
     else if (before) app.visited[id] = before;
+    updateParkMarkers();
+    renderStats();
+    renderParkList();
+    renderListMeta();
     toast('Nie udało się zapisać. Spróbuj ponownie.');
+    return;
   }
-
-  updateParkMarkers();
-  renderStats();
-  renderParkList();
-  renderListMeta();
 
   if (app.settings.skipDone) computeRoute();
   else if (app.route && inRoute(id)) {
@@ -795,7 +1069,7 @@ function popupHtml(p) {
              </div>`
       }
       <div class="pop-links">
-        <a href="${esc(p.detailsUrl)}" target="_blank" rel="noopener">Szczegóły ↗</a>
+        <a href="${esc(p.detailsUrl)}" target="_blank" rel="noopener noreferrer">Szczegóły ↗</a>
         <a href="https://www.google.com/maps/dir/?api=1&destination=${p.center[0]},${p.center[1]}" target="_blank" rel="noopener">Nawiguj ↗</a>
       </div>
       <button class="pop-btn" type="button" data-act="start-here" data-id="${p.id}" style="width:100%;margin-top:7px;justify-content:center">
@@ -887,7 +1161,7 @@ function renderSaved() {
       const date = new Date(r.createdAt);
       const doneInRoute = r.ids.filter((pid) => app.visited[pid]).length;
       const allDone = r.ids.length > 0 && doneInRoute === r.ids.length;
-      return `<div class="saved-card" data-id="${r.id}">
+      return `<div class="saved-card" data-id="${esc(r.id)}">
         <div class="saved-top">
           <div>
             <div class="saved-title">${esc(r.label || 'Trasa')}</div>
@@ -896,21 +1170,21 @@ function renderSaved() {
       }</div>
           </div>
           <div class="saved-actions">
-            <button class="icon-btn" type="button" data-act="show-route" data-id="${r.id}" title="Pokaż na mapie" aria-label="Pokaż na mapie">
+            <button class="icon-btn" type="button" data-act="show-route" data-id="${esc(r.id)}" title="Pokaż na mapie" aria-label="Pokaż na mapie">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20Z"/><path d="M9 4v13.5M15 6.5V20"/></svg>
             </button>
-            <button class="icon-btn danger" type="button" data-act="del-route" data-id="${r.id}" title="Usuń" aria-label="Usuń trasę">
+            <button class="icon-btn danger" type="button" data-act="del-route" data-id="${esc(r.id)}" title="Usuń" aria-label="Usuń trasę">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
             </button>
           </div>
         </div>
         <div class="saved-stats">${r.ids.length} ${plural(r.ids.length, 'park', 'parki', 'parków')} · ${fmtKm(r.total)} · ${fmtTime(r.walkMinutes)}</div>
         <div class="saved-actions-row">
-          <button class="saved-btn" type="button" data-act="gpx-route" data-id="${r.id}">
+          <button class="saved-btn" type="button" data-act="gpx-route" data-id="${esc(r.id)}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11m0 0 4-4m-4 4-4-4"/><path d="M4 17v3h16v-3"/></svg>
             GPX
           </button>
-          <button class="saved-btn" type="button" data-act="nav-route" data-id="${r.id}">
+          <button class="saved-btn" type="button" data-act="nav-route" data-id="${esc(r.id)}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m21 3-9.5 18-2-7.5L2 11.5Z"/></svg>
             Nawiguj
           </button>
@@ -968,10 +1242,10 @@ async function showSavedRoute(id) {
   app.map.fitBounds(L.latLngBounds(pts), { padding: [50, 60], maxZoom: 15.5, animate: false });
   toast(`Podgląd: ${r.label} · ${fmtKm(r.total)}`);
 
-  api('/api/geometry', { points: pts })
-    .then((g) => {
-      if (app.previewLayer === group && g.ok && g.coords?.length > 2) {
-        line.setLatLngs(g.coords);
+  fetchGeometry(pts)
+    .then((coords) => {
+      if (app.previewLayer === group && coords.length > 2) {
+        line.setLatLngs(coords);
         line.setStyle({ dashArray: null, color: '#2f7d57' });
       }
     })
@@ -1037,14 +1311,14 @@ async function computeVariants() {
   const results = await Promise.all(
     opts.map(async (o) => {
       try {
-        const r = await api('/api/route', {
+        const r = await routeFor({
           start: app.settings.start,
           n: o.n,
           kinds: [...app.activeCats],
           skipDone: app.settings.skipDone,
           loop: app.settings.loop,
         });
-        if (r.ok && !r.pending && !r.empty && Number.isFinite(r.total)) return { ...o, total: r.total };
+        if (r.ok && !r.empty && Number.isFinite(r.total)) return { ...o, total: r.total };
       } catch {}
       return { ...o, total: null };
     })
@@ -1136,48 +1410,225 @@ async function copyText(text) {
   }
 }
 
+function pageUrl() {
+  return new URL('./', location.href).href;
+}
+
+function showQr(text, box) {
+  if (typeof qrcode !== 'function') return;
+  try {
+    const qr = qrcode(0, 'M');
+    qr.addData(text);
+    qr.make();
+    box.innerHTML =
+      qr.createSvgTag({ cellSize: 5, margin: 1, scalable: true }) +
+      `<div class="net-qr-label">Zeskanuj aparatem — otworzy się ${esc(text.replace(/^https?:\/\//, ''))}</div>`;
+  } catch {}
+}
+
 async function openNetDialog() {
   const dlg = $('#netDialog');
   const list = $('#netList');
   const qrBox = $('#netQr');
-  list.innerHTML = '<div class="net-loading">Sprawdzam adresy…</div>';
+  list.innerHTML = '<div class="net-loading">Przygotowuję adres…</div>';
   qrBox.innerHTML = '';
   if (!dlg.open) dlg.showModal();
 
-  try {
-    const n = await api('/api/network');
-    const rows = [];
-    if (n.vpn?.https) rows.push(['VPN Tailscale (HTTPS)', n.vpn.https]);
-    if (n.vpn?.http) rows.push(['VPN Tailscale (HTTP)', n.vpn.http]);
-    for (const u of n.lan || []) rows.push(['Sieć lokalna', u]);
-    rows.push(['Ten komputer', `http://localhost:${location.port || 7777}`]);
+  const local = pageUrl();
+  const isLocal = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+  const rows = isLocal
+    ? [
+        ['Wersja online (GitHub Pages)', PUBLIC_URL],
+        ['Ta kopia lokalna', local],
+      ]
+    : [['Adres aplikacji', local]];
 
-    list.innerHTML = rows
+  list.innerHTML =
+    rows
       .map(
         ([label, url]) => `<div class="net-row">
           <div><div class="net-label">${esc(label)}</div><div class="net-url">${esc(url)}</div></div>
           <button class="net-copy" type="button" data-url="${esc(url)}">Kopiuj</button>
         </div>`
       )
-      .join('');
-    if (!n.vpn) {
-      list.innerHTML += `<div class="net-note">Nie wykryto Tailscale na tym komputerze — dostępny jest tylko adres w sieci lokalnej.</div>`;
-    }
+      .join('') +
+    `<div class="net-note">Dane są zapisane osobno na każdym urządzeniu. Na telefonie otwórz tę stronę i zaimportuj kopię w „Dane”.</div>`;
 
-    const qrUrl = n.vpn?.http || n.vpn?.https || (n.lan || [])[0];
-    if (qrUrl && typeof qrcode === 'function') {
-      try {
-        const qr = qrcode(0, 'M');
-        qr.addData(qrUrl);
-        qr.make();
-        qrBox.innerHTML =
-          qr.createSvgTag({ cellSize: 5, margin: 1, scalable: true }) +
-          `<div class="net-qr-label">Zeskanuj aparatem — otworzy się ${esc(qrUrl.replace(/^https?:\/\//, ''))}</div>`;
-      } catch {}
-    }
-  } catch (err) {
-    list.innerHTML = `<div class="net-loading">Nie udało się pobrać adresów: ${esc(err.message)}</div>`;
+  showQr(isLocal ? PUBLIC_URL : pageUrl(), qrBox);
+  const install = $('#btnInstall');
+  if (install) install.hidden = !app.installPrompt;
+}
+
+/* ------------------------------------------------------------ dane (JSON) */
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+function updateDataStats() {
+  const bytes = new Blob([JSON.stringify(ParkState.exportPayload(snapshotState()))]).size;
+  $('#dataStats').innerHTML = `
+    <div class="data-stat"><strong>${Object.keys(app.visited).length}</strong> z ${app.parks.length} zrobionych</div>
+    <div class="data-stat"><strong>${app.routes.length}</strong> ${plural(app.routes.length, 'trasa', 'trasy', 'tras')}</div>
+    <div class="data-stat"><strong>${formatBytes(bytes)}</strong> w tej przeglądarce</div>`;
+}
+
+function openDataDialog() {
+  app.pendingImport = null;
+  const preview = $('#dataPreview');
+  preview.hidden = true;
+  preview.innerHTML = '';
+  updateDataStats();
+  const dlg = $('#dataDialog');
+  if (!dlg.open) dlg.showModal();
+}
+
+function showImportError(message) {
+  app.pendingImport = null;
+  const preview = $('#dataPreview');
+  preview.hidden = false;
+  preview.innerHTML = `<div class="data-error">${esc(message)}</div>`;
+}
+
+async function handleImportFile(file) {
+  if (!file) return;
+  if (file.size > 2_000_000) return showImportError('Plik jest za duży (maksymalnie 2 MB).');
+
+  let raw;
+  try {
+    raw = JSON.parse(await file.text());
+  } catch {
+    return showImportError('To nie jest poprawny plik JSON.');
   }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return showImportError('Plik nie zawiera danych aplikacji.');
+  }
+  const hasShape = !!raw.data || 'visited' in raw || 'routes' in raw || 'settings' in raw;
+  if (!hasShape) return showImportError('Nie rozpoznaję formatu — to nie jest kopia Odkrywcy.');
+
+  const clean = ParkState.sanitizeState(raw, { parks: app.parks, categories: app.categories });
+  const counts = ParkState.summary(clean);
+  app.pendingImport = clean;
+
+  const warnings = (clean.warnings || [])
+    .slice(0, 4)
+    .map((w) => `<div class="data-warn">${esc(w)}</div>`)
+    .join('');
+
+  const preview = $('#dataPreview');
+  preview.hidden = false;
+  preview.innerHTML = `
+    <div class="data-preview-head">Wczytano <strong>${counts.visited}</strong> ${plural(
+    counts.visited,
+    'odwiedzony park',
+    'odwiedzone parki',
+    'odwiedzonych parków'
+  )} i <strong>${counts.routes}</strong> ${plural(counts.routes, 'trasę', 'trasy', 'tras')}.</div>
+    <div class="data-preview-sub">Plik: ${esc(file.name)} · start: ${esc(clean.settings.start.label)} · ${counts.n} parków na dziś</div>
+    ${warnings}
+    <div class="data-preview-actions">
+      <button class="data-btn primary" type="button" data-import="merge">Połącz z obecnymi</button>
+      <button class="data-btn" type="button" data-import="replace">Zastąp obecne</button>
+      <button class="data-btn" type="button" data-import="cancel">Anuluj</button>
+    </div>`;
+}
+
+function applyStateToUI() {
+  $('#skipDone').checked = app.settings.skipDone;
+  $('#loopChk').checked = app.settings.loop;
+  setN(app.settings.n, { recompute: false });
+  renderCatChips();
+  renderStart();
+  app.selectedId = null;
+  updateParkMarkers();
+  renderStats();
+  renderListMeta();
+  renderParkList();
+  renderSaved();
+  clearPreview();
+}
+
+function applyImport(mode) {
+  if (!app.pendingImport) return;
+  if (mode === 'replace' && !confirm('Zastąpić wszystkie obecne dane zawartością pliku?')) return;
+
+  const before = snapshotState();
+  const current = snapshotState();
+  const next = mode === 'merge' ? ParkState.mergeStates(current, app.pendingImport) : app.pendingImport;
+
+  app.visited = next.visited;
+  app.routes = next.routes;
+  app.settings = {
+    n: next.settings.n,
+    skipDone: next.settings.skipDone,
+    loop: next.settings.loop,
+    start: next.settings.start,
+  };
+  app.activeCats = new Set(next.settings.kinds);
+
+  if (!persistState()) {
+    app.visited = before.visited;
+    app.routes = before.routes;
+    app.settings = before.settings;
+    app.activeCats = new Set(before.settings.kinds);
+    return toast('Nie udało się zapisać zaimportowanych danych.');
+  }
+
+  applyStateToUI();
+  computeRoute({ fit: true });
+  app.pendingImport = null;
+  $('#dataDialog').close();
+  const s = ParkState.summary(snapshotState());
+  toast(`Zaimportowano: ${s.visited} ${plural(s.visited, 'park', 'parki', 'parków')}, ${s.routes} ${plural(s.routes, 'trasa', 'trasy', 'tras')}`);
+}
+
+function exportAllData() {
+  const payload = ParkState.exportPayload(snapshotState());
+  downloadFile(JSON.stringify(payload, null, 2), `odkrywca-parkow-${today()}.json`, 'application/json');
+  toast('Pobrano kopię danych (JSON)');
+}
+
+function resetAllData() {
+  if (!confirm('Usunąć wszystkie postępy, trasy i ustawienia z tej przeglądarki?')) return;
+  if (!confirm('Tej operacji nie można cofnąć. Zrobiłeś kopię? Usunąć dane?')) return;
+
+  const before = snapshotState();
+  const def = ParkState.defaultState(app.categories);
+  app.visited = {};
+  app.routes = [];
+  app.settings = {
+    n: def.settings.n,
+    skipDone: def.settings.skipDone,
+    loop: def.settings.loop,
+    start: def.settings.start,
+  };
+  app.activeCats = new Set(def.settings.kinds);
+
+  if (!persistState()) {
+    app.visited = before.visited;
+    app.routes = before.routes;
+    app.settings = before.settings;
+    app.activeCats = new Set(before.settings.kinds);
+    return toast('Nie udało się usunąć danych.');
+  }
+
+  applyStateToUI();
+  computeRoute({ fit: true });
+  $('#dataDialog').close();
+  toast('Dane usunięte');
+}
+
+async function installApp() {
+  if (!app.installPrompt) {
+    return toast('Użyj menu przeglądarki: „Zainstaluj aplikację” lub „Dodaj do ekranu głównego”.');
+  }
+  const prompt = app.installPrompt;
+  app.installPrompt = null;
+  prompt.prompt();
+  await prompt.userChoice.catch(() => {});
+  const btn = $('#btnInstall');
+  if (btn) btn.hidden = true;
 }
 
 function switchTab(tab) {
@@ -1204,6 +1655,37 @@ function bindUI() {
     } else {
       toast('Skopiuj ręcznie: ' + b.dataset.url);
     }
+  });
+
+  $('#btnData').addEventListener('click', openDataDialog);
+  $('#btnDataClose').addEventListener('click', () => $('#dataDialog').close());
+  $('#btnExport').addEventListener('click', exportAllData);
+  $('#btnImport').addEventListener('click', () => $('#importFile').click());
+  $('#importFile').addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    await handleImportFile(file);
+  });
+  $('#dataPreview').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-import]');
+    if (!b) return;
+    const mode = b.dataset.import;
+    if (mode === 'cancel') {
+      app.pendingImport = null;
+      const preview = $('#dataPreview');
+      preview.hidden = true;
+      preview.innerHTML = '';
+      return;
+    }
+    applyImport(mode);
+  });
+  $('#btnReset').addEventListener('click', resetAllData);
+  $('#btnInstall').addEventListener('click', installApp);
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    app.installPrompt = e;
+    const btn = $('#btnInstall');
+    if (btn) btn.hidden = false;
   });
 
   $('#btnPick').addEventListener('click', () => (app.picking ? stopPicking() : startPicking()));
@@ -1255,21 +1737,28 @@ function bindUI() {
     if (!app.route) return;
     const ids = app.route.stops.filter((s) => !s.isStart).map((s) => s.id);
     const label = `${ids.length} ${plural(ids.length, 'park', 'parki', 'parków')}`;
-    try {
-      const r = await api('/api/routes', {
-        ids,
-        start: app.settings.start,
-        label,
-        total: app.route.total,
-        walkMinutes: app.route.walkMinutes,
-        loop: app.settings.loop,
-      });
-      if (r.routes) app.routes = r.routes;
-      renderSaved();
-      toast('Trasa zapisana — jest w zakładce „Zapisane”');
-    } catch {
-      toast('Nie udało się zapisać trasy');
+    let id;
+    do {
+      id = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    } while (app.routes.some((r) => r.id === id));
+    const route = {
+      id,
+      createdAt: new Date().toISOString(),
+      start: { ...app.settings.start },
+      label,
+      ids,
+      total: app.route.total,
+      walkMinutes: app.route.walkMinutes,
+      loop: app.settings.loop,
+    };
+    const before = app.routes;
+    app.routes = [route, ...app.routes].slice(0, 200);
+    if (!persistState()) {
+      app.routes = before;
+      return toast('Nie udało się zapisać trasy');
     }
+    renderSaved();
+    toast('Trasa zapisana — jest w zakładce „Zapisane”');
   });
 
   $('#btnGpx').addEventListener('click', () => exportGpx());
@@ -1278,7 +1767,7 @@ function bindUI() {
     if (!app.route) return;
     const parks = app.route.stops.filter((s) => !s.isStart);
     if (parks.length > 10) toast('Google Maps przyjmie 10 punktów — cała trasa jest w pliku GPX');
-    window.open(mapsUrlFor(app.route), '_blank', 'noopener');
+    window.open(mapsUrlFor(app.route), '_blank', 'noopener,noreferrer');
   });
 
   $('#btnGeo').addEventListener('click', () => {
@@ -1337,15 +1826,15 @@ function bindUI() {
     if (del) {
       const r = app.routes.find((x) => x.id === del.dataset.id);
       if (!confirm(`Usunąć zapisaną trasę „${r?.label || ''}”?`)) return;
-      try {
-        const res = await api(`/api/routes/${del.dataset.id}`, { __delete: true });
-        app.routes = res.routes || app.routes.filter((x) => x.id !== del.dataset.id);
-        renderSaved();
-        clearPreview();
-        toast('Trasa usunięta');
-      } catch {
-        toast('Nie udało się usunąć trasy');
+      const before = app.routes;
+      app.routes = app.routes.filter((x) => x.id !== del.dataset.id);
+      if (!persistState()) {
+        app.routes = before;
+        return toast('Nie udało się usunąć trasy');
       }
+      renderSaved();
+      clearPreview();
+      toast('Trasa usunięta');
     }
   });
 
@@ -1367,31 +1856,126 @@ function bindUI() {
 
 /* ------------------------------------------------------------------ start */
 
+const COLOR_RE = /^#[0-9a-f]{6}$/i;
+const PARK_AREA = { minLat: 49.7, maxLat: 50.45, minLon: 19.5, maxLon: 20.35 };
+
+function safeUrl(value) {
+  try {
+    const url = new URL(String(value));
+    return url.protocol === 'https:' ? url.href : '';
+  } catch {
+    return '';
+  }
+}
+
+function sanitizeParksData(data) {
+  if (!data || typeof data !== 'object') throw new Error('Brak danych parków');
+
+  const categories = [];
+  for (const raw of Array.isArray(data.categories) ? data.categories : []) {
+    if (!raw || typeof raw !== 'object') continue;
+    const id = typeof raw.id === 'string' && /^[a-z][a-z0-9_-]{1,24}$/.test(raw.id) ? raw.id : '';
+    if (!id || categories.some((c) => c.id === id)) continue;
+    categories.push({
+      id,
+      label: ParkState.cleanText(raw.label, 40) || id,
+      color: COLOR_RE.test(raw.color) ? raw.color : '#2b2b2b',
+      count: 0,
+    });
+  }
+  if (!categories.length) throw new Error('Brak kategorii parków');
+
+  const catIds = new Set(categories.map((c) => c.id));
+  const parks = [];
+  const ids = new Set();
+  for (const raw of Array.isArray(data.parks) ? data.parks : []) {
+    if (!raw || typeof raw !== 'object') continue;
+    const id = typeof raw.id === 'string' && /^p\d{1,4}$/.test(raw.id) ? raw.id : '';
+    const number = Math.round(Number(raw.number));
+    const name = ParkState.cleanText(raw.name, 120);
+    const center =
+      Array.isArray(raw.center) && raw.center.length === 2
+        ? [Number(raw.center[0]), Number(raw.center[1])]
+        : null;
+    if (!id || ids.has(id) || !name || !Number.isFinite(number) || number < 1 || number > 999) continue;
+    if (!center || !center.every(Number.isFinite)) continue;
+    if (center[0] < PARK_AREA.minLat || center[0] > PARK_AREA.maxLat || center[1] < PARK_AREA.minLon || center[1] > PARK_AREA.maxLon)
+      continue;
+
+    const category = catIds.has(raw.category) ? raw.category : categories[0].id;
+    const cat = categories.find((c) => c.id === category);
+    parks.push({
+      id,
+      number,
+      name,
+      category,
+      categoryLabel: ParkState.cleanText(raw.categoryLabel, 40) || cat.label,
+      color: COLOR_RE.test(raw.color) ? raw.color : cat.color,
+      hint: ParkState.cleanText(raw.hint, 300),
+      detailsUrl: safeUrl(raw.detailsUrl) || 'https://odkrywca-parkow.pl/',
+      center,
+    });
+    ids.add(id);
+  }
+  if (!parks.length) throw new Error('Brak poprawnych punktów parków');
+
+  parks.sort((a, b) => a.number - b.number);
+  for (const cat of categories) cat.count = parks.filter((p) => p.category === cat.id).length;
+  return { parks, categories };
+}
+
+function matrixFromData(data, n) {
+  if (!data || !Array.isArray(data.d) || data.d.length !== n) return null;
+  const d = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const rawRow = data.d[i];
+    if (!Array.isArray(rawRow) || rawRow.length !== n) return null;
+    const row = new Float64Array(n);
+    for (let j = 0; j < n; j++) {
+      const value = Number(rawRow[j]);
+      if (!Number.isFinite(value) || value < 0) return null;
+      row[j] = value;
+    }
+    d[i] = row;
+  }
+  return { ready: true, approx: !!data.approx, d };
+}
+
+function fallbackMatrix(parks) {
+  const n = parks.length;
+  const d = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const row = new Float64Array(n);
+    for (let j = 0; j < n; j++) row[j] = i === j ? 0 : airDist(parks[i].center, parks[j].center);
+    d[i] = row;
+  }
+  return { ready: true, approx: true, d };
+}
+
 async function init() {
   setupMap();
   bindUI();
   try {
-    const boot = await api('/api/bootstrap');
-    app.parks = boot.parks;
-    app.byId = new Map(app.parks.map((p) => [p.id, p]));
-    app.categories = boot.kinds || [];
-    app.catById = new Map(app.categories.map((c) => [c.id, c]));
-    app.visited = boot.state.visited || {};
-    app.routes = boot.state.routes || [];
-    app.matrix = boot.meta.matrix || app.matrix;
-    app.activeCats = new Set(app.categories.map((c) => c.id));
+    const [parksRaw, matrixRaw] = await Promise.all([
+      fetchJson('data/parks.json', 15000),
+      fetchJson('data/matrix.json', 20000).catch(() => null),
+    ]);
 
-    const s = boot.state.settings || {};
-    app.settings = {
-      n: Math.max(1, Math.min(20, Number(s.n) || 5)),
-      skipDone: s.skipDone !== false,
-      loop: !!s.loop,
-      start: s.start && Number.isFinite(s.start.lat) ? s.start : { ...DEFAULT_START },
-    };
-    if (Array.isArray(s.kinds) && s.kinds.length) {
-      const valid = s.kinds.filter((k) => app.catById.has(k));
-      if (valid.length) app.activeCats = new Set(valid);
-    }
+    const data = sanitizeParksData(parksRaw);
+    app.parks = data.parks;
+    app.categories = data.categories;
+    app.byId = new Map(app.parks.map((p) => [p.id, p]));
+    app.idx = new Map(app.parks.map((p, i) => [p.id, i]));
+    app.catById = new Map(app.categories.map((c) => [c.id, c]));
+    app.matrix = matrixFromData(matrixRaw, app.parks.length) || fallbackMatrix(app.parks);
+    loadStartRows();
+
+    const saved = ParkState.load({ parks: app.parks, categories: app.categories });
+    const s = saved.state.settings;
+    app.visited = saved.state.visited;
+    app.routes = saved.state.routes;
+    app.settings = { n: s.n, skipDone: s.skipDone, loop: s.loop, start: s.start };
+    app.activeCats = new Set(s.kinds.length ? s.kinds : app.categories.map((c) => c.id));
 
     $('#skipDone').checked = app.settings.skipDone;
     $('#loopChk').checked = app.settings.loop;
@@ -1404,14 +1988,20 @@ async function init() {
     renderParkList();
     renderSaved();
 
-    if (app.parks.length) {
-      fitAllParks();
-    }
-
-    computeRoute({ fit: true });
+    if (saved.error) toast('Nie udało się wczytać zapisanych danych — zaczynam od nowa.');
+    if (app.parks.length) fitAllParks();
+    await computeRoute({ fit: true });
   } catch (err) {
     console.error(err);
-    showEmpty(`<strong>Nie udało się wczytać danych.</strong><br>${esc(err.message)}<br>Sprawdź, czy serwer działa.`);
+    showEmpty(
+      `<strong>Nie udało się wczytać danych.</strong><br>${esc(
+        err.message
+      )}<br>Otwórz aplikację przez serwer HTTP lub GitHub Pages — nie przez plik z dysku.`
+    );
+  }
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
 }
 
