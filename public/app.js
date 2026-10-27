@@ -557,24 +557,86 @@ async function reverseGeocode(lat, lon) {
   return label;
 }
 
+// Valhalla zwraca kształt trasy jako polyline6.
+function decodePolyline6(encoded) {
+  const out = [];
+  let index = 0;
+  let lat = 0;
+  let lon = 0;
+  while (index < encoded.length) {
+    let b;
+    let shift = 0;
+    let result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    lat += result & 1 ? ~(result >> 1) : result >> 1;
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    lon += result & 1 ? ~(result >> 1) : result >> 1;
+    out.push([lat / 1e6, lon / 1e6]);
+  }
+  return out;
+}
+
+// Geometria z Valhalli - tego samego routera, z którego biorą się odległości
+// w macierzy i wierszu startu, więc rysowana linia zgadza się z planem.
+async function fetchValhallaGeometry(pts) {
+  const body = {
+    locations: pts.map(([lat, lon]) => ({ lat, lon })),
+    costing: 'pedestrian',
+  };
+  const json = await fetchJson(`${VALHALLA}/route?json=${encodeURIComponent(JSON.stringify(body))}`, 20000);
+  const legs = json.trip?.legs;
+  if (!Array.isArray(legs) || !legs.length) return [];
+  const coords = [];
+  for (const leg of legs) {
+    if (!leg || typeof leg.shape !== 'string' || !leg.shape) continue;
+    const part = decodePolyline6(leg.shape);
+    if (coords.length && part.length) {
+      const [lat, lon] = coords[coords.length - 1];
+      if (Math.abs(part[0][0] - lat) < 1e-7 && Math.abs(part[0][1] - lon) < 1e-7) part.shift();
+    }
+    coords.push(...part);
+  }
+  return coords;
+}
+
 async function fetchGeometry(pts) {
   if (!Array.isArray(pts) || pts.length < 2) return [];
   const key = pts.map(([lat, lon]) => `${lat.toFixed(5)},${lon.toFixed(5)}`).join('|');
   if (app.geometryCache.has(key)) return app.geometryCache.get(key);
+
+  let coords = [];
   try {
-    const coordStr = pts.map(([lat, lon]) => `${lon},${lat}`).join(';');
-    const json = await fetchJson(
-      `${OSRM}/route/v1/foot/${coordStr}?overview=full&geometries=geojson&steps=false`,
-      20000
-    );
-    const geom = json.routes?.[0]?.geometry?.coordinates || [];
-    const coords = geom.map(([lon, lat]) => [lat, lon]);
-    if (coords.length > 2) {
-      if (app.geometryCache.size > 40) app.geometryCache.delete(app.geometryCache.keys().next().value);
-      app.geometryCache.set(key, coords);
-      return coords;
-    }
+    coords = await fetchValhallaGeometry(pts);
   } catch {}
+
+  // OSRM tylko awaryjnie: jego profil pieszy potrafi prowadzić objazdem.
+  if (!(coords.length > 2)) {
+    try {
+      const coordStr = pts.map(([lat, lon]) => `${lon},${lat}`).join(';');
+      const json = await fetchJson(
+        `${OSRM}/route/v1/foot/${coordStr}?overview=full&geometries=geojson&steps=false`,
+        20000
+      );
+      const geom = json.routes?.[0]?.geometry?.coordinates || [];
+      coords = geom.map(([lon, lat]) => [lat, lon]);
+    } catch {}
+  }
+
+  if (coords.length > 2) {
+    if (app.geometryCache.size > 40) app.geometryCache.delete(app.geometryCache.keys().next().value);
+    app.geometryCache.set(key, coords);
+    return coords;
+  }
   return [];
 }
 

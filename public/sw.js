@@ -3,7 +3,7 @@
  * Service worker: cache aplikacji i danych, żeby działała też bez internetu.
  * Nie cache'ujemy kafelków mapy ani zapytań do usług trasujących (inne originy).
  */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = `odkrywca-${VERSION}`;
 const BASE = new URL('./', self.location).href;
 const CORE = [

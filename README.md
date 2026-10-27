@@ -43,7 +43,7 @@ node server.js
 # http://127.0.0.1:7777/
 ```
 
-`server.js` to **tylko** serwer plików statycznych: nie ma API, nie czyta `data/state.json` i nie zapisuje niczego. Domyślnie słucha na `127.0.0.1` (nie na całej sieci). Możesz też użyć `start.cmd` lub zadania **OdkrywcaParkow**.
+`server.js` to **tylko** serwer plików statycznych: nie ma API, nie czyta `data/state.json` i nie zapisuje niczego. Domyślnie słucha na `127.0.0.1` (nie na całej sieci). Możesz też użyć `start.cmd`.
 
 Nie otwieraj `public/index.html` bezpośrednio przez `file://` — przeglądarka zablokuje `fetch` danych i service worker.
 
@@ -51,8 +51,8 @@ Nie otwieraj `public/index.html` bezpośrednio przez `file://` — przeglądarka
 
 - Postępy i ustawienia **nie są wysyłane na żaden serwer**; zostają w `localStorage`.
 - Do wyznaczenia trasy przeglądarka wysyła **tylko współrzędne** startu i parków do publicznych usług OSM:
-  - [OSRM](https://project-osrm.org/) — macierz i geometria trasy,
-  - [Valhalla/FOSSGIS](https://valhalla1.openstreetmap.de/) — dojście ze startu,
+  - [Valhalla/FOSSGIS](https://valhalla1.openstreetmap.de/) — dojście ze startu i geometria trasy,
+  - [OSRM](https://project-osrm.org/) — macierz odległości park–park i awaryjna geometria,
   - [Nominatim](https://nominatim.openstreetmap.org/) — nazwa wybranego startu (max. 1 zapytanie/s, z cache).
 - Kafelki mapy pochodzą z [OpenStreetMap](https://www.openstreetmap.org/copyright). Aplikacja jest mała i nie masuje serwerów OSM; przy większym ruchu użyj własnego dostawcy kafelków.
 - Strona ma CSP ograniczające skrypty, połączenia i obrazki; Leaflet i generator QR są vendored lokalnie, bez CDN i analityki.
